@@ -50,10 +50,23 @@
             position: absolute;
             width: 20px;
             height: 30px;
-            background-color: #ffd6e0;
+            background-color: #5b9bd5; /* Blue body */
             border-radius: 10px 10px 0 0;
             z-index: 10;
             image-rendering: pixelated;
+        }
+
+        /* Add a tail */
+        .lemming::after {
+            content: '';
+            position: absolute;
+            width: 8px;
+            height: 8px;
+            background-color: #5b9bd5; /* Blue tail to match body */
+            border-radius: 0 0 50% 50%;
+            bottom: -6px;
+            left: 6px;
+            z-index: -1;
         }
 
         .lemming::before {
@@ -61,18 +74,18 @@
             position: absolute;
             width: 16px;
             height: 16px;
-            background-color: #ffd6e0;
+            background-color: #70ad47; /* Green head */
             border-radius: 50%;
             top: -10px;
             left: 2px;
         }
 
-        .lemming::after {
-            content: '';
+        /* Move eye to be a separate element since we used ::after for the tail */
+        .lemming .eye {
             position: absolute;
             width: 4px;
             height: 4px;
-            background-color: #5a3d5c;
+            background-color: #000000; /* Black eye */
             border-radius: 50%;
             top: -5px;
             left: 8px;
@@ -82,16 +95,35 @@
             position: absolute;
             width: 10px;
             height: 5px;
-            background-color: #5a3d5c;
+            background-color: #4a7a31; /* Darker green hair */
             top: -15px;
             left: 5px;
+        }
+        
+        /* Add whiskers */
+        .lemming .whisker {
+            position: absolute;
+            height: 1px;
+            width: 6px;
+            background-color: #ffffff;
+            top: -2px;
+        }
+        
+        .lemming .whisker.left {
+            left: -4px;
+            transform: rotate(-15deg);
+        }
+        
+        .lemming .whisker.right {
+            right: -4px;
+            transform: rotate(15deg);
         }
 
         .lemming .arm {
             position: absolute;
             width: 8px;
             height: 12px;
-            background-color: #ffd6e0;
+            background-color: #5b9bd5;
             border-radius: 4px;
         }
 
@@ -111,7 +143,7 @@
             position: absolute;
             width: 8px;
             height: 12px;
-            background-color: #ffd6e0;
+            background-color: #5b9bd5;
             border-radius: 4px;
             bottom: -10px;
         }
@@ -211,6 +243,19 @@
             text-shadow: 3px 3px 0px rgba(255, 110, 196, 0.5);
             z-index: 100;
         }
+        
+        .subtitle {
+            position: absolute;
+            top: 60px;
+            left: 0;
+            right: 0;
+            text-align: center;
+            font-family: 'VT323', monospace;
+            font-size: 1.5rem;
+            color: #5a3d5c;
+            text-shadow: 3px 3px 0px rgba(255, 110, 196, 0.5);
+            z-index: 100;
+        }
     </style>
 </head>
 
@@ -218,6 +263,7 @@
     <div class="game-container">
         <a href="../index.html" class="back-link">Back to Home</a>
         <h1 class="title">Lemmings</h1>
+        <p class="subtitle">Watch these cute green & blue lemmings explore their world!</p>
         <div class="ground"></div>
     </div>
 
@@ -295,6 +341,19 @@
                 const rightLeg = document.createElement('div');
                 rightLeg.className = 'leg right';
                 lemming.appendChild(rightLeg);
+
+                const eye = document.createElement('div');
+                eye.className = 'eye';
+                lemming.appendChild(eye);
+                
+                // Add whiskers
+                const leftWhisker = document.createElement('div');
+                leftWhisker.className = 'whisker left';
+                lemming.appendChild(leftWhisker);
+                
+                const rightWhisker = document.createElement('div');
+                rightWhisker.className = 'whisker right';
+                lemming.appendChild(rightWhisker);
 
                 // Random starting position
                 const startPlatformIndex = Math.floor(Math.random() * platforms.length);
