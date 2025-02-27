@@ -1,0 +1,377 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Digital Zen Garden</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=VT323&family=Fredoka:wght@400;600&display=swap"
+        rel="stylesheet">
+    <style>
+        body,
+        html {
+            margin: 0;
+            padding: 0;
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            background-color: #f5f2eb;
+            font-family: 'Fredoka', sans-serif;
+            color: #5a3d5c;
+        }
+
+        .container {
+            width: 100%;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .header {
+            padding: 1rem;
+            text-align: center;
+            background-color: rgba(255, 255, 255, 0.7);
+            border-bottom: 3px solid #c1a5e8;
+        }
+
+        h1 {
+            font-family: 'VT323', monospace;
+            font-size: 3rem;
+            margin: 0;
+            background: linear-gradient(45deg, #7873f5, #c1a5e8);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            text-shadow: 2px 2px 0px rgba(120, 115, 245, 0.3);
+        }
+
+        .description {
+            font-size: 1rem;
+            margin: 0.5rem 0 0;
+        }
+
+        .zen-garden {
+            flex: 1;
+            position: relative;
+            background-color: #e8e1d9;
+            background-image:
+                radial-gradient(#d6cfc7 2px, transparent 2px),
+                radial-gradient(#d6cfc7 2px, transparent 2px);
+            background-size: 30px 30px;
+            background-position: 0 0, 15px 15px;
+            overflow: hidden;
+            cursor: grab;
+        }
+
+        .palette {
+            position: absolute;
+            left: 1rem;
+            top: 1rem;
+            background-color: rgba(255, 255, 255, 0.8);
+            border-radius: 15px;
+            padding: 1rem;
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+            border: 2px solid #c1a5e8;
+            z-index: 100;
+        }
+
+        .palette-item {
+            width: 60px;
+            height: 60px;
+            border-radius: 10px;
+            cursor: pointer;
+            transition: transform 0.2s, box-shadow 0.2s;
+            background-size: cover;
+            background-position: center;
+            image-rendering: pixelated;
+            box-shadow: 2px 2px 0 rgba(90, 61, 92, 0.3);
+        }
+
+        .palette-item:hover {
+            transform: scale(1.1);
+            box-shadow: 3px 3px 0 rgba(90, 61, 92, 0.4);
+        }
+
+        .garden-item {
+            position: absolute;
+            cursor: move;
+            user-select: none;
+            transition: filter 0.3s, transform 0.3s;
+            z-index: 10;
+        }
+
+        .garden-item:hover {
+            z-index: 20;
+            filter: drop-shadow(0 0 5px rgba(193, 165, 232, 0.7));
+        }
+
+        .garden-item.dragging {
+            z-index: 30;
+            transform: scale(1.05);
+            filter: drop-shadow(0 0 8px rgba(193, 165, 232, 0.9));
+        }
+
+        .stone {
+            width: 50px;
+            height: 40px;
+            background-color: #8c8c8c;
+            border-radius: 50%;
+            box-shadow: inset -5px -5px 10px rgba(0, 0, 0, 0.2),
+                inset 5px 5px 10px rgba(255, 255, 255, 0.2);
+        }
+
+        .plant {
+            width: 40px;
+            height: 60px;
+            background-color: #6a9955;
+            clip-path: polygon(50% 0%, 80% 30%, 100% 60%, 70% 90%, 30% 90%, 0% 60%, 20% 30%);
+            animation: sway 5s infinite ease-in-out;
+        }
+
+        .water {
+            width: 80px;
+            height: 60px;
+            background-color: #5ba3e0;
+            border-radius: 40%;
+            opacity: 0.8;
+            animation: ripple 4s infinite ease-in-out;
+        }
+
+        @keyframes sway {
+
+            0%,
+            100% {
+                transform: rotate(-2deg);
+            }
+
+            50% {
+                transform: rotate(2deg);
+            }
+        }
+
+        @keyframes ripple {
+
+            0%,
+            100% {
+                transform: scale(1);
+                opacity: 0.8;
+            }
+
+            50% {
+                transform: scale(1.05);
+                opacity: 0.9;
+            }
+        }
+
+        .home-button {
+            position: absolute;
+            bottom: 1rem;
+            right: 1rem;
+            background-color: rgba(255, 255, 255, 0.8);
+            border-radius: 50%;
+            width: 50px;
+            height: 50px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            text-decoration: none;
+            color: #5a3d5c;
+            font-size: 1.5rem;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+            border: 2px solid #c1a5e8;
+            transition: transform 0.2s;
+        }
+
+        .home-button:hover {
+            transform: scale(1.1);
+        }
+
+        .instructions {
+            position: absolute;
+            bottom: 1rem;
+            left: 1rem;
+            background-color: rgba(255, 255, 255, 0.8);
+            border-radius: 10px;
+            padding: 0.5rem 1rem;
+            font-size: 0.9rem;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+            border: 2px solid #c1a5e8;
+            max-width: 300px;
+            transition: opacity 0.3s;
+        }
+
+        .clear-button {
+            position: absolute;
+            top: 1rem;
+            right: 1rem;
+            background-color: rgba(255, 255, 255, 0.8);
+            border-radius: 10px;
+            padding: 0.5rem 1rem;
+            font-size: 0.9rem;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+            border: 2px solid #ff6ec4;
+            cursor: pointer;
+            transition: transform 0.2s;
+        }
+
+        .clear-button:hover {
+            transform: scale(1.05);
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>Digital Zen Garden</h1>
+            <p class="description">Arrange elements to create your peaceful space. Drag and drop to position.</p>
+        </div>
+
+        <div class="zen-garden" id="garden">
+            <div class="palette">
+                <div class="palette-item stone" data-type="stone"></div>
+                <div class="palette-item plant" data-type="plant"></div>
+                <div class="palette-item water" data-type="water"></div>
+            </div>
+
+            <div class="instructions">
+                Drag elements from the palette to place them in your garden. Rearrange them to create your own zen
+                space.
+            </div>
+
+            <div class="clear-button" id="clearButton">
+                Clear Garden
+            </div>
+
+            <a href="../index.html" class="home-button">🏠</a>
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            const garden = document.getElementById('garden');
+            const paletteItems = document.querySelectorAll('.palette-item');
+            const clearButton = document.getElementById('clearButton');
+            let activeItem = null;
+            let initialX, initialY;
+            let xOffset = 0, yOffset = 0;
+
+            // Add event listeners to palette items
+            paletteItems.forEach(item => {
+                item.addEventListener('mousedown', function (e) {
+                    // Create a new garden item based on the palette item
+                    const newItem = document.createElement('div');
+                    newItem.classList.add('garden-item', item.dataset.type);
+
+                    // Position the new item at the cursor position
+                    const gardenRect = garden.getBoundingClientRect();
+                    const x = e.clientX - gardenRect.left - (newItem.offsetWidth / 2);
+                    const y = e.clientY - gardenRect.top - (newItem.offsetHeight / 2);
+
+                    newItem.style.left = x + 'px';
+                    newItem.style.top = y + 'px';
+
+                    // Add the new item to the garden
+                    garden.appendChild(newItem);
+
+                    // Set the new item as the active item
+                    activeItem = newItem;
+                    initialX = e.clientX;
+                    initialY = e.clientY;
+                    xOffset = 0;
+                    yOffset = 0;
+
+                    activeItem.classList.add('dragging');
+
+                    // Prevent default behavior
+                    e.preventDefault();
+                });
+            });
+
+            // Add event listeners for garden items
+            garden.addEventListener('mousedown', function (e) {
+                if (e.target.classList.contains('garden-item')) {
+                    activeItem = e.target;
+                    initialX = e.clientX;
+                    initialY = e.clientY;
+
+                    const styles = window.getComputedStyle(activeItem);
+                    xOffset = parseInt(styles.left) || 0;
+                    yOffset = parseInt(styles.top) || 0;
+
+                    activeItem.classList.add('dragging');
+
+                    e.preventDefault();
+                }
+            });
+
+            // Add event listeners for mouse movement and release
+            document.addEventListener('mousemove', dragItem);
+            document.addEventListener('mouseup', dropItem);
+
+            // Function to handle dragging
+            function dragItem(e) {
+                if (activeItem) {
+                    e.preventDefault();
+
+                    const dx = e.clientX - initialX;
+                    const dy = e.clientY - initialY;
+
+                    const newX = xOffset + dx;
+                    const newY = yOffset + dy;
+
+                    activeItem.style.left = newX + 'px';
+                    activeItem.style.top = newY + 'px';
+                }
+            }
+
+            // Function to handle dropping
+            function dropItem() {
+                if (activeItem) {
+                    activeItem.classList.remove('dragging');
+                    activeItem = null;
+                }
+            }
+
+            // Clear garden button
+            clearButton.addEventListener('click', function () {
+                const gardenItems = document.querySelectorAll('.garden-item');
+                gardenItems.forEach(item => {
+                    garden.removeChild(item);
+                });
+            });
+
+            // Add subtle animations to existing elements
+            function addRandomMovement() {
+                const stones = document.querySelectorAll('.stone');
+                const plants = document.querySelectorAll('.plant');
+                const waters = document.querySelectorAll('.water');
+
+                // Add subtle random movement to stones
+                stones.forEach(stone => {
+                    if (!stone.classList.contains('dragging')) {
+                        const randomX = (Math.random() - 0.5) * 0.5;
+                        const randomY = (Math.random() - 0.5) * 0.5;
+                        stone.style.transform = `translate(${randomX}px, ${randomY}px)`;
+                    }
+                });
+
+                // Plants already have sway animation
+
+                // Waters already have ripple animation
+
+                setTimeout(addRandomMovement, 3000);
+            }
+
+            // Start the subtle animations
+            addRandomMovement();
+        });
+    </script>
+</body>
+
+</html>
