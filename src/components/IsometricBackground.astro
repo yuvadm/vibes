@@ -1,0 +1,83 @@
+---
+// Isometric Background Component
+---
+
+<div class="content">
+    <h1>Isometric Triangles</h1>
+</div>
+
+<style>
+    body,
+    html {
+        margin: 0;
+        padding: 0;
+        width: 100%;
+        height: 100%;
+        overflow: hidden;
+        background-color: #000;
+    }
+
+    .triangle {
+        position: absolute;
+        width: 0;
+        height: 0;
+        border-style: solid;
+        opacity: 0.7;
+        transform-origin: center;
+        animation: float 20s infinite ease-in-out;
+    }
+
+    /* Create isometric triangle using clip-path instead of borders */
+    .isometric {
+        width: 100px;
+        height: 100px;
+        background-color: rgba(255, 255, 255, 0.8);
+        border: none;
+        clip-path: polygon(50% 0%, 100% 75%, 0% 75%);
+        transform-style: preserve-3d;
+        perspective: 800px;
+    }
+
+    @keyframes float {
+        0% {
+            transform: translateY(0) rotate(0deg) scale(1);
+        }
+
+        25% {
+            transform: translateY(-20px) rotate(90deg) scale(1.05);
+        }
+
+        50% {
+            transform: translateY(0) rotate(180deg) scale(1);
+        }
+
+        75% {
+            transform: translateY(20px) rotate(270deg) scale(0.95);
+        }
+
+        100% {
+            transform: translateY(0) rotate(360deg) scale(1);
+        }
+    }
+
+    .content {
+        position: relative;
+        z-index: 10;
+        color: white;
+        text-align: center;
+        font-family: "Arial", sans-serif;
+
+        /* Center vertically and horizontally */
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        width: 100%;
+    }
+
+    h1 {
+        font-size: 3rem;
+        text-shadow: 0 0 10px rgba(0, 0, 0, 0.5);
+        margin-bottom: 1rem;
+    }
+</style>
