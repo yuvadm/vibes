@@ -5,6 +5,7 @@ A collection of cute & creative web experiments and visual experiences.
 ## 🌈 Experiments
 
 - [Isometric Triangles](/isometric/index.html) - Dynamic background with animated geometric shapes in an isometric perspective.
+- [Lemmings](/lemmings/index.html) - Cute pixelated lemmings walking and falling in a dynamic environment.
 
 ## 🚀 Local Development
 

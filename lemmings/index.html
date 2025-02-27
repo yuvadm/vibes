@@ -1,0 +1,426 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Lemmings</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=VT323&family=Fredoka:wght@400;600&display=swap"
+        rel="stylesheet">
+    <style>
+        body,
+        html {
+            margin: 0;
+            padding: 0;
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            background-color: #c1a5e8;
+            font-family: 'Fredoka', sans-serif;
+        }
+
+        .game-container {
+            width: 100%;
+            height: 100%;
+            position: relative;
+            background: linear-gradient(to bottom, #7873f5 0%, #c1a5e8 100%);
+            overflow: hidden;
+        }
+
+        .ground {
+            position: absolute;
+            bottom: 0;
+            width: 100%;
+            height: 100px;
+            background-color: #5a3d5c;
+            image-rendering: pixelated;
+        }
+
+        .platform {
+            position: absolute;
+            height: 20px;
+            background-color: #ff6ec4;
+            border-top: 3px solid #ffd6e0;
+            image-rendering: pixelated;
+        }
+
+        .lemming {
+            position: absolute;
+            width: 20px;
+            height: 30px;
+            background-color: #ffd6e0;
+            border-radius: 10px 10px 0 0;
+            z-index: 10;
+            image-rendering: pixelated;
+        }
+
+        .lemming::before {
+            content: '';
+            position: absolute;
+            width: 16px;
+            height: 16px;
+            background-color: #ffd6e0;
+            border-radius: 50%;
+            top: -10px;
+            left: 2px;
+        }
+
+        .lemming::after {
+            content: '';
+            position: absolute;
+            width: 4px;
+            height: 4px;
+            background-color: #5a3d5c;
+            border-radius: 50%;
+            top: -5px;
+            left: 8px;
+        }
+
+        .lemming .hair {
+            position: absolute;
+            width: 10px;
+            height: 5px;
+            background-color: #5a3d5c;
+            top: -15px;
+            left: 5px;
+        }
+
+        .lemming .arm {
+            position: absolute;
+            width: 8px;
+            height: 12px;
+            background-color: #ffd6e0;
+            border-radius: 4px;
+        }
+
+        .lemming .arm.left {
+            left: -6px;
+            top: 5px;
+            transform-origin: top right;
+        }
+
+        .lemming .arm.right {
+            right: -6px;
+            top: 5px;
+            transform-origin: top left;
+        }
+
+        .lemming .leg {
+            position: absolute;
+            width: 8px;
+            height: 12px;
+            background-color: #ffd6e0;
+            border-radius: 4px;
+            bottom: -10px;
+        }
+
+        .lemming .leg.left {
+            left: 2px;
+        }
+
+        .lemming .leg.right {
+            right: 2px;
+        }
+
+        .lemming.walking .leg.left {
+            animation: legWalk 0.5s infinite alternate;
+        }
+
+        .lemming.walking .leg.right {
+            animation: legWalk 0.5s infinite alternate-reverse;
+        }
+
+        .lemming.walking .arm.left {
+            animation: armSwing 0.5s infinite alternate;
+        }
+
+        .lemming.walking .arm.right {
+            animation: armSwing 0.5s infinite alternate-reverse;
+        }
+
+        .lemming.falling .arm.left {
+            transform: rotate(45deg);
+        }
+
+        .lemming.falling .arm.right {
+            transform: rotate(-45deg);
+        }
+
+        @keyframes legWalk {
+            0% {
+                transform: translateY(0);
+            }
+
+            100% {
+                transform: translateY(-5px);
+            }
+        }
+
+        @keyframes armSwing {
+            0% {
+                transform: rotate(-15deg);
+            }
+
+            100% {
+                transform: rotate(15deg);
+            }
+        }
+
+        .back-link {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            z-index: 100;
+            color: #5a3d5c;
+            text-decoration: none;
+            background: rgba(255, 255, 255, 0.8);
+            padding: 10px 15px;
+            border-radius: 10px;
+            font-family: 'VT323', monospace;
+            font-size: 18px;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            border: 3px solid #ff6ec4;
+            box-shadow: 3px 3px 0px #7873f5;
+        }
+
+        .back-link:hover {
+            background: rgba(255, 255, 255, 1);
+            transform: translateY(-3px);
+            box-shadow: 5px 5px 0px #7873f5;
+        }
+
+        .back-link::before {
+            content: "←";
+            font-size: 22px;
+        }
+
+        .title {
+            position: absolute;
+            top: 20px;
+            left: 0;
+            right: 0;
+            text-align: center;
+            font-family: 'VT323', monospace;
+            font-size: 3rem;
+            color: #5a3d5c;
+            text-shadow: 3px 3px 0px rgba(255, 110, 196, 0.5);
+            z-index: 100;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="game-container">
+        <a href="../index.html" class="back-link">Back to Home</a>
+        <h1 class="title">Lemmings</h1>
+        <div class="ground"></div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            const gameContainer = document.querySelector('.game-container');
+            const ground = document.querySelector('.ground');
+            const containerWidth = gameContainer.clientWidth;
+            const containerHeight = gameContainer.clientHeight;
+
+            // Create platforms
+            const platformCount = 5;
+            const platforms = [];
+
+            for (let i = 0; i < platformCount; i++) {
+                const platform = document.createElement('div');
+                platform.className = 'platform';
+
+                const width = 100 + Math.random() * 200;
+                const left = Math.random() * (containerWidth - width);
+                const bottom = 120 + Math.random() * (containerHeight - 250);
+
+                platform.style.width = `${width}px`;
+                platform.style.left = `${left}px`;
+                platform.style.bottom = `${bottom}px`;
+
+                gameContainer.appendChild(platform);
+                platforms.push({
+                    element: platform,
+                    left: left,
+                    right: left + width,
+                    bottom: bottom,
+                    top: bottom + 20
+                });
+            }
+
+            // Add ground to platforms array
+            platforms.push({
+                element: ground,
+                left: 0,
+                right: containerWidth,
+                bottom: 0,
+                top: 100
+            });
+
+            // Create lemmings
+            const lemmingCount = 15;
+            const lemmings = [];
+
+            for (let i = 0; i < lemmingCount; i++) {
+                createLemming();
+            }
+
+            function createLemming() {
+                const lemming = document.createElement('div');
+                lemming.className = 'lemming walking';
+
+                // Add body parts
+                const hair = document.createElement('div');
+                hair.className = 'hair';
+                lemming.appendChild(hair);
+
+                const leftArm = document.createElement('div');
+                leftArm.className = 'arm left';
+                lemming.appendChild(leftArm);
+
+                const rightArm = document.createElement('div');
+                rightArm.className = 'arm right';
+                lemming.appendChild(rightArm);
+
+                const leftLeg = document.createElement('div');
+                leftLeg.className = 'leg left';
+                lemming.appendChild(leftLeg);
+
+                const rightLeg = document.createElement('div');
+                rightLeg.className = 'leg right';
+                lemming.appendChild(rightLeg);
+
+                // Random starting position
+                const startPlatformIndex = Math.floor(Math.random() * platforms.length);
+                const startPlatform = platforms[startPlatformIndex];
+                const left = startPlatform.left + Math.random() * (startPlatform.right - startPlatform.left - 20);
+                const bottom = startPlatform.top;
+
+                lemming.style.left = `${left}px`;
+                lemming.style.bottom = `${bottom}px`;
+
+                gameContainer.appendChild(lemming);
+
+                // Lemming properties
+                const lemmingObj = {
+                    element: lemming,
+                    x: left,
+                    y: bottom,
+                    width: 20,
+                    height: 30,
+                    direction: Math.random() > 0.5 ? 1 : -1, // 1 for right, -1 for left
+                    speed: 0.5 + Math.random() * 1.5,
+                    falling: false,
+                    currentPlatform: startPlatform,
+                    fallSpeed: 0
+                };
+
+                lemmings.push(lemmingObj);
+
+                // Set initial direction
+                if (lemmingObj.direction === -1) {
+                    lemming.style.transform = 'scaleX(-1)';
+                }
+            }
+
+            // Game loop
+            function update() {
+                lemmings.forEach(lemming => {
+                    // Move horizontally
+                    lemming.x += lemming.direction * lemming.speed;
+
+                    // Check if lemming is on a platform
+                    if (!lemming.falling) {
+                        // Check if lemming is at the edge of the platform
+                        if (lemming.x < lemming.currentPlatform.left ||
+                            lemming.x + lemming.width > lemming.currentPlatform.right) {
+
+                            // Check if there's another platform below
+                            let foundPlatform = false;
+
+                            for (const platform of platforms) {
+                                if (lemming.x >= platform.left - lemming.width &&
+                                    lemming.x <= platform.right &&
+                                    lemming.y > platform.top &&
+                                    lemming.y - platform.top < 20) {
+
+                                    lemming.currentPlatform = platform;
+                                    lemming.y = platform.top;
+                                    foundPlatform = true;
+                                    break;
+                                }
+                            }
+
+                            if (!foundPlatform) {
+                                // Start falling
+                                lemming.falling = true;
+                                lemming.fallSpeed = 0;
+                                lemming.element.classList.remove('walking');
+                                lemming.element.classList.add('falling');
+                            }
+                        }
+
+                        // Check if lemming hit a wall (edge of screen)
+                        if (lemming.x < 0) {
+                            lemming.x = 0;
+                            lemming.direction = 1;
+                            lemming.element.style.transform = 'scaleX(1)';
+                        } else if (lemming.x + lemming.width > containerWidth) {
+                            lemming.x = containerWidth - lemming.width;
+                            lemming.direction = -1;
+                            lemming.element.style.transform = 'scaleX(-1)';
+                        }
+                    } else {
+                        // Falling
+                        lemming.fallSpeed += 0.2;
+                        lemming.y -= lemming.fallSpeed;
+
+                        // Check if landed on a platform
+                        for (const platform of platforms) {
+                            if (lemming.x + lemming.width > platform.left &&
+                                lemming.x < platform.right &&
+                                lemming.y <= platform.top &&
+                                lemming.y >= platform.bottom) {
+
+                                lemming.y = platform.top;
+                                lemming.falling = false;
+                                lemming.currentPlatform = platform;
+                                lemming.element.classList.remove('falling');
+                                lemming.element.classList.add('walking');
+                                break;
+                            }
+                        }
+
+                        // Check if lemming fell off the screen
+                        if (lemming.y < -50) {
+                            // Respawn at the top
+                            gameContainer.removeChild(lemming.element);
+                            const index = lemmings.indexOf(lemming);
+                            if (index > -1) {
+                                lemmings.splice(index, 1);
+                            }
+                            createLemming();
+                        }
+                    }
+
+                    // Update position
+                    lemming.element.style.left = `${lemming.x}px`;
+                    lemming.element.style.bottom = `${lemming.y}px`;
+                });
+
+                requestAnimationFrame(update);
+            }
+
+            // Start the game loop
+            update();
+        });
+    </script>
+</body>
+
+</html>
