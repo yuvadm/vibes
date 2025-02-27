@@ -20,6 +20,7 @@ To view the experiments locally:
    - Main page: `index.html`
    - Isometric Triangles: `isometric/index.html`
    - Digital Zen Garden: `zengarden/index.html`
+   - BTC Ticker: `btctick/index.html`
 
 ## 💻 Technologies
 
