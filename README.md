@@ -1,12 +1,12 @@
-# Vibes
+# ✨ Vibes ✨
 
-A collection of creative web experiments and visual experiences.
+A collection of cute & creative web experiments and visual experiences.
 
-## Experiments
+## 🌈 Experiments
 
 - [Isometric Triangles](/isometric/index.html) - Dynamic background with animated geometric shapes in an isometric perspective.
 
-## Local Development
+## 🚀 Local Development
 
 To view the experiments locally:
 
@@ -15,12 +15,22 @@ To view the experiments locally:
    - Main page: `index.html`
    - Isometric Triangles: `isometric/index.html`
 
-## Technologies
+## 💻 Technologies
 
 - HTML5
 - CSS3
 - JavaScript (Vanilla)
+- Google Fonts (VT323 & Fredoka)
 
-## License
+## 🎨 Style
+
+The project uses a bright, cute, and slightly pixelated aesthetic with:
+- Pastel colors (pink, purple, light blue)
+- Pixelated rendering for some elements
+- Playful borders and shadows
+- Retro-inspired pixel font (VT323) for headings
+- Modern rounded font (Fredoka) for body text
+
+## 📝 License
 
 MIT

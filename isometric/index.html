@@ -5,6 +5,10 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Isometric Triangles</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=VT323&family=Fredoka:wght@400;600&display=swap"
+        rel="stylesheet">
     <style>
         body,
         html {
@@ -13,7 +17,8 @@
             width: 100%;
             height: 100%;
             overflow: hidden;
-            background-color: #000;
+            background-color: #c1a5e8;
+            font-family: 'Fredoka', sans-serif;
         }
 
         .triangle {
@@ -21,20 +26,22 @@
             width: 0;
             height: 0;
             border-style: solid;
-            opacity: 0.7;
+            opacity: 0.8;
             transform-origin: center;
             animation: float 20s infinite ease-in-out;
+            image-rendering: pixelated;
         }
 
         /* Create isometric triangle using clip-path instead of borders */
         .isometric {
             width: 100px;
             height: 100px;
-            background-color: rgba(255, 255, 255, 0.8);
+            background-color: rgba(255, 255, 255, 0.9);
             border: none;
             clip-path: polygon(50% 0%, 100% 75%, 0% 75%);
             transform-style: preserve-3d;
             perspective: 800px;
+            filter: drop-shadow(2px 2px 0 rgba(90, 61, 92, 0.3));
         }
 
         @keyframes float {
@@ -62,9 +69,9 @@
         .content {
             position: relative;
             z-index: 10;
-            color: white;
+            color: #5a3d5c;
             text-align: center;
-            font-family: 'Arial', sans-serif;
+            font-family: 'Fredoka', sans-serif;
 
             /* Center vertically and horizontally */
             position: absolute;
@@ -72,48 +79,63 @@
             left: 50%;
             transform: translate(-50%, -50%);
             width: 100%;
+            background-color: rgba(255, 255, 255, 0.7);
+            padding: 20px;
+            border-radius: 20px;
+            border: 5px dashed #ff6ec4;
+            box-shadow: 5px 5px 0px #7873f5;
+            max-width: 500px;
+            margin: 0 auto;
         }
 
         h1 {
-            font-size: 3rem;
-            text-shadow: 0 0 10px rgba(0, 0, 0, 0.5);
+            font-family: 'VT323', monospace;
+            font-size: 3.5rem;
+            text-shadow: 3px 3px 0px rgba(255, 110, 196, 0.5);
             margin-bottom: 1rem;
+            color: #5a3d5c;
+            letter-spacing: 2px;
         }
-        
+
         .back-link {
             position: absolute;
             top: 20px;
             left: 20px;
             z-index: 100;
-            color: white;
+            color: #5a3d5c;
             text-decoration: none;
-            background: rgba(0, 0, 0, 0.5);
+            background: rgba(255, 255, 255, 0.8);
             padding: 10px 15px;
-            border-radius: 5px;
-            font-family: 'Arial', sans-serif;
-            font-size: 14px;
+            border-radius: 10px;
+            font-family: 'VT323', monospace;
+            font-size: 18px;
             transition: all 0.3s ease;
             display: flex;
             align-items: center;
             gap: 5px;
+            border: 3px solid #ff6ec4;
+            box-shadow: 3px 3px 0px #7873f5;
         }
-        
+
         .back-link:hover {
-            background: rgba(255, 255, 255, 0.2);
+            background: rgba(255, 255, 255, 1);
+            transform: translateY(-3px);
+            box-shadow: 5px 5px 0px #7873f5;
         }
-        
+
         .back-link::before {
             content: "←";
-            font-size: 18px;
+            font-size: 22px;
         }
     </style>
 </head>
 
 <body>
     <a href="../index.html" class="back-link">Back to Home</a>
-    
+
     <div class="content">
         <h1>Isometric Triangles</h1>
+        <p>Move your mouse around to create more cute triangles! ✨</p>
     </div>
 
     <script>
@@ -121,10 +143,10 @@
             console.log("DOM loaded, creating triangles");
 
             const colors = [
-                '#FF0000', '#FF00FF', '#FF00AA', '#AA00FF',
-                '#0000FF', '#00AAFF', '#00FFFF', '#00FFAA',
-                '#00FF00', '#AAFF00', '#FFFF00', '#FFAA00',
-                '#FF6600', '#FF0066', '#FFFFFF', '#AAAAFF'
+                '#ff6ec4', '#7873f5', '#c1a5e8', '#ffd6e0',
+                '#ffecf1', '#5a3d5c', '#7c5295', '#ffb3d1',
+                '#b3f5ff', '#b3ffcc', '#ffffb3', '#ffccb3',
+                '#ffb3ff', '#b3b3ff', '#ffffff', '#ffa6c9'
             ];
 
             const windowWidth = window.innerWidth;
