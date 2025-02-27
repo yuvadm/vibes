@@ -5,7 +5,7 @@ let scene, camera, renderer;
 let tracks = [];
 let terrain = [];
 let clock = new THREE.Clock();
-const TRAIN_SPEED = 5; // Constant speed
+const TRAIN_SPEED = 10; // Constant speed
 const TRACK_SEGMENT_LENGTH = 20;
 const MAX_TRACKS = 20; // Number of track segments to keep
 const FIELD_SIZE = 100;
@@ -135,13 +135,45 @@ function addTrackSegment() {
         const lastDirection = lastTrack.userData.direction;
         startPoint = lastTrack.userData.endPoint;
 
+        // Get the second-to-last track's direction if available for smoother transitions
+        let secondLastDirection = lastDirection.clone();
+        if (tracks.length > 1) {
+            const secondLastTrack = tracks[tracks.length - 2];
+            secondLastDirection = secondLastTrack.userData.direction;
+        }
+
+        // Calculate how much the track has already curved
+        const currentCurveAngle = lastDirection.angleTo(secondLastDirection);
+
         // Randomly decide if this segment should curve
-        const shouldCurve = Math.random() < 0.3; // 30% chance of curving
+        // Reduce chance of curving if we just curved
+        const curveProbability = Math.max(0.1, 0.3 - currentCurveAngle);
+        const shouldCurve = Math.random() < curveProbability;
 
         if (shouldCurve) {
-            // Create a curved track
-            const curveAngle = (Math.random() * 0.3 + 0.1) * (Math.random() < 0.5 ? 1 : -1); // Random angle between 0.1 and 0.4 radians
-            direction = lastDirection.clone().applyAxisAngle(new THREE.Vector3(0, 1, 0), curveAngle);
+            // Create a curved track with more gradual curves
+            // Limit the curve angle based on the previous curve
+            const maxCurveAngle = Math.max(0.05, 0.2 - currentCurveAngle);
+            const minCurveAngle = 0.05;
+            const curveAngle = (Math.random() * (maxCurveAngle - minCurveAngle) + minCurveAngle);
+
+            // Prefer to continue curving in the same direction for smoother transitions
+            let curveDirection = Math.random() < 0.5 ? 1 : -1;
+
+            // If we're already curving, 70% chance to continue in the same direction
+            if (currentCurveAngle > 0.05 && tracks.length > 2) {
+                const lastCurveDirection = Math.sign(
+                    lastDirection.clone().cross(secondLastDirection).y
+                );
+                if (Math.random() < 0.7) {
+                    curveDirection = lastCurveDirection;
+                }
+            }
+
+            direction = lastDirection.clone().applyAxisAngle(
+                new THREE.Vector3(0, 1, 0),
+                curveAngle * curveDirection
+            );
         } else {
             // Continue straight
             direction = lastDirection.clone();
@@ -431,6 +463,24 @@ function updateTrainPosition(delta) {
     // Move along current track segment
     currentTrackT += (TRAIN_SPEED * delta) / currentTrack.userData.length;
 
+    // Get updated track
+    const track = tracks[currentTrackIndex];
+    if (!track) return;
+
+    // Look ahead to the next track segment for smooth transitions
+    let targetDirection = track.userData.direction.clone();
+
+    // If we're approaching the end of the current segment, start blending with the next segment's direction
+    if (currentTrackT > 0.8 && currentTrackIndex < tracks.length - 1) {
+        const nextTrack = tracks[currentTrackIndex + 1];
+        if (nextTrack) {
+            // Calculate blend factor (0 at 80% of current track, 1 at end of current track)
+            const blendFactor = (currentTrackT - 0.8) * 5; // Maps 0.8-1.0 to 0-1
+            // Blend the current direction with the next track's direction
+            targetDirection.lerp(nextTrack.userData.direction, blendFactor);
+        }
+    }
+
     // If we've reached the end of the current track segment
     if (currentTrackT >= 1) {
         currentTrackT = 0;
@@ -447,10 +497,6 @@ function updateTrainPosition(delta) {
         }
     }
 
-    // Get updated track
-    const track = tracks[currentTrackIndex];
-    if (!track) return;
-
     // Interpolate position along current track segment
     trainPosition.lerpVectors(
         track.userData.startPoint,
@@ -458,8 +504,8 @@ function updateTrainPosition(delta) {
         currentTrackT
     );
 
-    // Update train direction
-    trainDirection.copy(track.userData.direction);
+    // Smoothly update train direction (gradual turning)
+    trainDirection.lerp(targetDirection, 0.1);
 }
 
 // Animation loop
@@ -480,16 +526,27 @@ function animate() {
         updateScenery();
     }
 
-    // Update camera position to follow train
-    camera.position.copy(trainPosition);
-    camera.position.y += 2; // Height of driver's view
+    // Smoothly update camera position to follow train
+    const cameraTargetPosition = trainPosition.clone();
+    cameraTargetPosition.y += 2; // Height of driver's view
+
+    // Smooth camera movement using lerp (linear interpolation)
+    camera.position.lerp(cameraTargetPosition, 0.1);
 
     // Look ahead in the direction of travel
     const lookAtPoint = trainPosition.clone().add(
         trainDirection.clone().multiplyScalar(10)
     );
     lookAtPoint.y = trainPosition.y + 1;
-    camera.lookAt(lookAtPoint);
+
+    // Create a smooth look target for the camera
+    const currentLookAt = new THREE.Vector3();
+    camera.getWorldDirection(currentLookAt);
+    currentLookAt.multiplyScalar(10).add(camera.position);
+
+    // Blend current look direction with target look direction
+    const smoothLookAt = new THREE.Vector3().lerpVectors(currentLookAt, lookAtPoint, 0.05);
+    camera.lookAt(smoothLookAt);
 
     renderer.render(scene, camera);
 }
