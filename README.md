@@ -11,6 +11,7 @@ A collection of cute & creative web experiments and visual experiences.
 - [Digital Zen Garden](/zengarden/) - A meditative drag-and-drop experience where users can arrange elements with subtle animations.
 - [BTC Ticker](/btctick/) - Live Bitcoin price visualization with a cool animated chart showing price history.
 - [Interactive Particle System](/particles/) - A full-screen interactive particle system where particles respond to cursor movement, clicks, and device tilt.
+- [Ambient Soundscape Generator](/soundscape/) - Create beautiful, generative ambient soundscapes with customizable musical scales and parameters that play continuously in the background.
 
 ## 🚀 Local Development
 
@@ -23,6 +24,7 @@ To view the experiments locally:
    - Digital Zen Garden: `zengarden/index.html`
    - BTC Ticker: `btctick/index.html`
    - Interactive Particle System: `particles/index.html`
+   - Ambient Soundscape Generator: `soundscape/index.html`
 
 ## 💻 Technologies
 
