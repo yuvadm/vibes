@@ -31,7 +31,3 @@ The project uses a bright, cute, and slightly pixelated aesthetic with:
 - Playful borders and shadows
 - Retro-inspired pixel font (VT323) for headings
 - Modern rounded font (Fredoka) for body text
-
-## 📝 License
-
-MIT
