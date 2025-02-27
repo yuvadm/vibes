@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html lang="en" dir="ltr">
+
+<head>
+    <meta charset="utf-8">
+    <title>BTC Ticker</title>
+    <style>
+        body {
+            font-family: monospace;
+        }
+    </style>
+    <script>
+        const socket = new WebSocket("wss://stream.binance.com:9443/stream");
+        socket.onopen = () => {
+            socket.send(JSON.stringify({
+                "method": "SUBSCRIBE",
+                "params": ["btcusdt@trade"],
+                "id": 1
+            }));
+        };
+        socket.onmessage = (event) => {
+            const data = JSON.parse(event.data);
+            if (data.data !== undefined) {
+                const d = data.data;
+                const price = d.p;
+                const priceElement = document.querySelector("#price");
+                priceElement.innerText = price;
+            }
+
+        };
+    </script>
+</head>
+
+<body>
+    <p id="price"></p>
+</body>
+
+</html>
