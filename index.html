@@ -165,6 +165,27 @@
                 href="https://github.com/yuvadm/vibes">GitHub</a>.
         </footer>
     </div>
+
+    <script>
+        // Function to shuffle the experiment cards on page load
+        document.addEventListener('DOMContentLoaded', function () {
+            const experimentsContainer = document.querySelector('.experiments');
+            const experimentCards = Array.from(experimentsContainer.children);
+
+            // Fisher-Yates shuffle algorithm
+            for (let i = experimentCards.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                // Swap elements
+                [experimentCards[i], experimentCards[j]] = [experimentCards[j], experimentCards[i]];
+            }
+
+            // Clear container and append shuffled cards
+            experimentsContainer.innerHTML = '';
+            experimentCards.forEach(card => {
+                experimentsContainer.appendChild(card);
+            });
+        });
+    </script>
 </body>
 
 </html>
