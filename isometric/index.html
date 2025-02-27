@@ -1,0 +1,191 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Colorful Isometric Triangles</title>
+    <style>
+        body, html {
+            margin: 0;
+            padding: 0;
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            background-color: #000;
+        }
+
+        .triangle {
+            position: absolute;
+            width: 0;
+            height: 0;
+            border-style: solid;
+            opacity: 0.7;
+            transform-origin: center;
+            animation: float 20s infinite ease-in-out;
+        }
+        
+        /* Create isometric triangle using clip-path instead of borders */
+        .isometric {
+            width: 100px;
+            height: 100px;
+            background-color: rgba(255, 255, 255, 0.8);
+            border: none;
+            clip-path: polygon(50% 0%, 100% 75%, 0% 75%);
+            transform-style: preserve-3d;
+            perspective: 800px;
+        }
+        
+        @keyframes float {
+            0% {
+                transform: translateY(0) rotate(0deg) scale(1);
+            }
+            25% {
+                transform: translateY(-20px) rotate(90deg) scale(1.05);
+            }
+            50% {
+                transform: translateY(0) rotate(180deg) scale(1);
+            }
+            75% {
+                transform: translateY(20px) rotate(270deg) scale(0.95);
+            }
+            100% {
+                transform: translateY(0) rotate(360deg) scale(1);
+            }
+        }
+
+        .content {
+            position: relative;
+            z-index: 10;
+            color: white;
+            text-align: center;
+            padding-top: 20vh;
+            font-family: 'Arial', sans-serif;
+        }
+
+        h1 {
+            font-size: 3rem;
+            text-shadow: 0 0 10px rgba(0, 0, 0, 0.5);
+        }
+    </style>
+</head>
+
+<body>
+    <div class="content">
+        <h1>Colorful Isometric Triangles</h1>
+        <p>A dynamic background with animated isometric triangles</p>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            console.log("DOM loaded, creating triangles");
+            
+            const colors = [
+                '#FF0000', '#FF00FF', '#FF00AA', '#AA00FF', 
+                '#0000FF', '#00AAFF', '#00FFFF', '#00FFAA',
+                '#00FF00', '#AAFF00', '#FFFF00', '#FFAA00',
+                '#FF6600', '#FF0066', '#FFFFFF', '#AAAAFF'
+            ];
+            
+            const windowWidth = window.innerWidth;
+            const windowHeight = window.innerHeight;
+            const triangleCount = Math.max(50, Math.floor((windowWidth * windowHeight) / 10000));
+            
+            console.log(`Creating ${triangleCount} triangles for window size ${windowWidth}x${windowHeight}`);
+            
+            // Create triangles using DOM elements with isometric perspective
+            for (let i = 0; i < triangleCount; i++) {
+                createIsometricTriangle();
+            }
+            
+            function createIsometricTriangle() {
+                const triangle = document.createElement('div');
+                triangle.className = 'triangle isometric';
+                
+                // Random size between 50 and 150
+                const size = 50 + Math.random() * 100;
+                
+                // Random position
+                const left = Math.random() * windowWidth;
+                const top = Math.random() * windowHeight;
+                
+                // Random color
+                const color = colors[Math.floor(Math.random() * colors.length)];
+                
+                // Random rotation for isometric effect
+                const rotateX = -30 + Math.random() * 60; // -30 to 30 degrees
+                const rotateY = -30 + Math.random() * 60; // -30 to 30 degrees
+                const rotateZ = Math.random() * 360;      // 0 to 360 degrees
+                
+                // Random animation duration
+                const duration = 10 + Math.random() * 40;
+                
+                // Random direction
+                const direction = Math.random() > 0.5 ? 'normal' : 'reverse';
+                
+                // Set triangle properties
+                triangle.style.left = `${left}px`;
+                triangle.style.top = `${top}px`;
+                triangle.style.width = `${size}px`;
+                triangle.style.height = `${size}px`;
+                triangle.style.backgroundColor = color;
+                triangle.style.transform = `rotateX(${rotateX}deg) rotateY(${rotateY}deg) rotateZ(${rotateZ}deg)`;
+                triangle.style.animationDuration = `${duration}s`;
+                triangle.style.animationDirection = direction;
+                
+                // Add to body
+                document.body.appendChild(triangle);
+                console.log(`Created isometric triangle at (${left}, ${top}) with size ${size} and color ${color}`);
+            }
+            
+            // Add some triangles when mouse moves
+            document.addEventListener('mousemove', function(e) {
+                if (Math.random() < 0.05) { // 5% chance to create a triangle on mouse move
+                    const triangle = document.createElement('div');
+                    triangle.className = 'triangle isometric';
+                    
+                    const size = 50 + Math.random() * 100;
+                    const color = colors[Math.floor(Math.random() * colors.length)];
+                    
+                    // Random rotation for isometric effect
+                    const rotateX = -30 + Math.random() * 60;
+                    const rotateY = -30 + Math.random() * 60;
+                    const rotateZ = Math.random() * 360;
+                    
+                    triangle.style.left = `${e.clientX - size/2}px`;
+                    triangle.style.top = `${e.clientY - size/2}px`;
+                    triangle.style.width = `${size}px`;
+                    triangle.style.height = `${size}px`;
+                    triangle.style.backgroundColor = color;
+                    triangle.style.transform = `rotateX(${rotateX}deg) rotateY(${rotateY}deg) rotateZ(${rotateZ}deg)`;
+                    triangle.style.animationDuration = `${10 + Math.random() * 40}s`;
+                    triangle.style.animationDirection = Math.random() > 0.5 ? 'normal' : 'reverse';
+                    
+                    document.body.appendChild(triangle);
+                }
+            });
+            
+            // Handle window resize
+            window.addEventListener('resize', function() {
+                // Clear all existing triangles
+                const existingTriangles = document.querySelectorAll('.triangle');
+                existingTriangles.forEach(triangle => {
+                    document.body.removeChild(triangle);
+                });
+                
+                // Create new triangles based on new window size
+                const newWindowWidth = window.innerWidth;
+                const newWindowHeight = window.innerHeight;
+                const newTriangleCount = Math.max(50, Math.floor((newWindowWidth * newWindowHeight) / 10000));
+                
+                for (let i = 0; i < newTriangleCount; i++) {
+                    createIsometricTriangle();
+                }
+            });
+            
+            console.log("Initialization complete");
+        });
+    </script>
+</body>
+
+</html>
