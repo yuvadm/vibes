@@ -50,7 +50,8 @@
             position: absolute;
             width: 20px;
             height: 30px;
-            background-color: #5b9bd5; /* Blue body */
+            background-color: #5b9bd5;
+            /* Blue body */
             border-radius: 10px 10px 0 0;
             z-index: 10;
             image-rendering: pixelated;
@@ -62,7 +63,8 @@
             position: absolute;
             width: 8px;
             height: 8px;
-            background-color: #5b9bd5; /* Blue tail to match body */
+            background-color: #5b9bd5;
+            /* Blue tail to match body */
             border-radius: 0 0 50% 50%;
             bottom: -6px;
             left: 6px;
@@ -74,7 +76,8 @@
             position: absolute;
             width: 16px;
             height: 16px;
-            background-color: #70ad47; /* Green head */
+            background-color: #70ad47;
+            /* Green head */
             border-radius: 50%;
             top: -10px;
             left: 2px;
@@ -85,7 +88,8 @@
             position: absolute;
             width: 4px;
             height: 4px;
-            background-color: #000000; /* Black eye */
+            background-color: #000000;
+            /* Black eye */
             border-radius: 50%;
             top: -5px;
             left: 8px;
@@ -95,11 +99,12 @@
             position: absolute;
             width: 10px;
             height: 5px;
-            background-color: #4a7a31; /* Darker green hair */
+            background-color: #4a7a31;
+            /* Darker green hair */
             top: -15px;
             left: 5px;
         }
-        
+
         /* Add whiskers */
         .lemming .whisker {
             position: absolute;
@@ -108,12 +113,12 @@
             background-color: #ffffff;
             top: -2px;
         }
-        
+
         .lemming .whisker.left {
             left: -4px;
             transform: rotate(-15deg);
         }
-        
+
         .lemming .whisker.right {
             right: -4px;
             transform: rotate(15deg);
@@ -243,10 +248,10 @@
             text-shadow: 3px 3px 0px rgba(255, 110, 196, 0.5);
             z-index: 100;
         }
-        
+
         .subtitle {
             position: absolute;
-            top: 60px;
+            top: 100px;
             left: 0;
             right: 0;
             text-align: center;
@@ -345,12 +350,12 @@
                 const eye = document.createElement('div');
                 eye.className = 'eye';
                 lemming.appendChild(eye);
-                
+
                 // Add whiskers
                 const leftWhisker = document.createElement('div');
                 leftWhisker.className = 'whisker left';
                 lemming.appendChild(leftWhisker);
-                
+
                 const rightWhisker = document.createElement('div');
                 rightWhisker.className = 'whisker right';
                 lemming.appendChild(rightWhisker);
