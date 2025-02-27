@@ -79,10 +79,39 @@
             text-shadow: 0 0 10px rgba(0, 0, 0, 0.5);
             margin-bottom: 1rem;
         }
+        
+        .back-link {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            z-index: 100;
+            color: white;
+            text-decoration: none;
+            background: rgba(0, 0, 0, 0.5);
+            padding: 10px 15px;
+            border-radius: 5px;
+            font-family: 'Arial', sans-serif;
+            font-size: 14px;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+        
+        .back-link:hover {
+            background: rgba(255, 255, 255, 0.2);
+        }
+        
+        .back-link::before {
+            content: "←";
+            font-size: 18px;
+        }
     </style>
 </head>
 
 <body>
+    <a href="../index.html" class="back-link">Back to Home</a>
+    
     <div class="content">
         <h1>Isometric Triangles</h1>
     </div>
