@@ -6,10 +6,10 @@ A collection of cute & creative web experiments and visual experiences.
 
 ## 🌈 Experiments
 
-- [Isometric Triangles](/isometric/index.html) - Dynamic background with animated geometric shapes in an isometric perspective.
-- [Lemmings](/lemmings/index.html) - Cute green & blue lemmings walking and falling in a dynamic pixelated environment.
-- [Digital Zen Garden](/zengarden/index.html) - A meditative drag-and-drop experience where users can arrange elements with subtle animations.
-- [BTC Ticker](/btctick/index.html) - Live Bitcoin price visualization with a cool animated chart showing price history.
+- [Isometric Triangles](/isometric/) - Dynamic background with animated geometric shapes in an isometric perspective.
+- [Lemmings](/lemmings/) - Cute green & blue lemmings walking and falling in a dynamic pixelated environment.
+- [Digital Zen Garden](/zengarden/) - A meditative drag-and-drop experience where users can arrange elements with subtle animations.
+- [BTC Ticker](/btctick/) - Live Bitcoin price visualization with a cool animated chart showing price history.
 
 ## 🚀 Local Development
 
