@@ -5,7 +5,7 @@ let scene, camera, renderer;
 let tracks = [];
 let terrain = [];
 let clock = new THREE.Clock();
-const TRAIN_SPEED = 3; // Constant speed
+const TRAIN_SPEED = 5; // Constant speed
 const TRACK_SEGMENT_LENGTH = 20;
 const MAX_TRACKS = 20; // Number of track segments to keep
 const FIELD_SIZE = 100;
@@ -13,6 +13,8 @@ let currentTrackIndex = 0;
 let trainPosition = new THREE.Vector3(0, 0.5, 0);
 let trainDirection = new THREE.Vector3(0, 0, 1);
 let currentTrackT = 0; // Parameter for position along current track segment (0 to 1)
+let lastSceneryUpdatePosition = new THREE.Vector3();
+const SCENERY_UPDATE_DISTANCE = 40; // Distance to travel before updating scenery
 
 // Initialize the scene
 function init() {
@@ -174,8 +176,9 @@ function addTrackSegment() {
 
 // Create terrain around the tracks
 function createTerrain() {
-    // Create ground
-    const groundGeometry = new THREE.PlaneGeometry(FIELD_SIZE * 2, FIELD_SIZE * 2, 32, 32);
+    // Create ground that follows the train
+    const groundSize = FIELD_SIZE * 2;
+    const groundGeometry = new THREE.PlaneGeometry(groundSize, groundSize, 32, 32);
     const groundMaterial = new THREE.MeshStandardMaterial({
         color: 0x4CAF50,  // Green color
         roughness: 0.8,
@@ -185,21 +188,50 @@ function createTerrain() {
     ground.rotation.x = -Math.PI / 2;
     ground.position.y = -0.1;
     ground.receiveShadow = true;
-    scene.add(ground);
 
-    // Add random trees, rocks and hills
+    // Store the ground in a special property so we can update its position
+    ground.userData.isGround = true;
+    scene.add(ground);
+    terrain.push(ground);
+
+    // Add initial environment elements
     addEnvironmentElements();
+}
+
+// Update ground position to follow train
+function updateGroundPosition() {
+    // Find the ground
+    for (let i = 0; i < terrain.length; i++) {
+        if (terrain[i].userData.isGround) {
+            // Update ground position to follow train
+            terrain[i].position.x = trainPosition.x;
+            terrain[i].position.z = trainPosition.z;
+            break;
+        }
+    }
 }
 
 // Add trees, rocks and other environment elements
 function addEnvironmentElements() {
     // Create trees
-    const numTrees = 200;
+    const numTrees = 50;
 
     for (let i = 0; i < numTrees; i++) {
-        // Random position away from tracks
-        const x = (Math.random() - 0.5) * FIELD_SIZE;
-        const z = (Math.random() - 0.5) * FIELD_SIZE;
+        // Random position in front of the train
+        const angle = (Math.random() - 0.5) * Math.PI; // -90 to +90 degrees from forward direction
+        const distance = 50 + Math.random() * 50; // 50-100 units ahead
+
+        // Calculate position based on train direction
+        const forward = trainDirection.clone().normalize();
+        const right = new THREE.Vector3().crossVectors(forward, new THREE.Vector3(0, 1, 0)).normalize();
+
+        const x = Math.sin(angle) * distance;
+        const z = Math.cos(angle) * distance;
+
+        // Transform to world coordinates
+        const treePos = trainPosition.clone()
+            .add(forward.clone().multiplyScalar(z))
+            .add(right.clone().multiplyScalar(x));
 
         // Don't place trees too close to the tracks
         if (Math.abs(x) < 5) continue;
@@ -227,7 +259,7 @@ function addEnvironmentElements() {
         foliage.receiveShadow = true;
         treeGroup.add(foliage);
 
-        treeGroup.position.set(x, 0, z);
+        treeGroup.position.copy(treePos);
         // Add some random rotation and scale variation
         treeGroup.rotation.y = Math.random() * Math.PI * 2;
         const scale = 0.5 + Math.random() * 1.5;
@@ -238,12 +270,24 @@ function addEnvironmentElements() {
     }
 
     // Create rocks
-    const numRocks = 50;
+    const numRocks = 20;
 
     for (let i = 0; i < numRocks; i++) {
-        // Random position away from tracks
-        const x = (Math.random() - 0.5) * FIELD_SIZE;
-        const z = (Math.random() - 0.5) * FIELD_SIZE;
+        // Random position in front of the train
+        const angle = (Math.random() - 0.5) * Math.PI; // -90 to +90 degrees from forward direction
+        const distance = 50 + Math.random() * 50; // 50-100 units ahead
+
+        // Calculate position based on train direction
+        const forward = trainDirection.clone().normalize();
+        const right = new THREE.Vector3().crossVectors(forward, new THREE.Vector3(0, 1, 0)).normalize();
+
+        const x = Math.sin(angle) * distance;
+        const z = Math.cos(angle) * distance;
+
+        // Transform to world coordinates
+        const rockPos = trainPosition.clone()
+            .add(forward.clone().multiplyScalar(z))
+            .add(right.clone().multiplyScalar(x));
 
         // Don't place rocks too close to the tracks
         if (Math.abs(x) < 4) continue;
@@ -256,7 +300,9 @@ function addEnvironmentElements() {
         });
         const rock = new THREE.Mesh(rockGeometry, rockMaterial);
 
-        rock.position.set(x, 0.25, z);
+        rock.position.copy(rockPos);
+        rock.position.y = 0.25;
+
         // Add some random rotation and scale variation
         rock.rotation.set(
             Math.random() * Math.PI,
@@ -274,14 +320,24 @@ function addEnvironmentElements() {
     }
 
     // Create some distant hills
-    const numHills = 30;
+    const numHills = 10;
 
     for (let i = 0; i < numHills; i++) {
         // Position hills at the edges of the field
-        const angle = Math.random() * Math.PI * 2;
-        const distance = FIELD_SIZE * 0.7 + Math.random() * FIELD_SIZE * 0.3;
-        const x = Math.cos(angle) * distance;
-        const z = Math.sin(angle) * distance;
+        const angle = (Math.random() - 0.5) * Math.PI * 0.8; // Mostly ahead
+        const distance = 80 + Math.random() * 40; // 80-120 units ahead
+
+        // Calculate position based on train direction
+        const forward = trainDirection.clone().normalize();
+        const right = new THREE.Vector3().crossVectors(forward, new THREE.Vector3(0, 1, 0)).normalize();
+
+        const x = Math.sin(angle) * distance;
+        const z = Math.cos(angle) * distance;
+
+        // Transform to world coordinates
+        const hillPos = trainPosition.clone()
+            .add(forward.clone().multiplyScalar(z))
+            .add(right.clone().multiplyScalar(x));
 
         const hillGeometry = new THREE.ConeGeometry(15 + Math.random() * 10, 10 + Math.random() * 5, 8);
         const hillMaterial = new THREE.MeshStandardMaterial({
@@ -294,7 +350,8 @@ function addEnvironmentElements() {
         });
         const hill = new THREE.Mesh(hillGeometry, hillMaterial);
 
-        hill.position.set(x, -5, z);
+        hill.position.copy(hillPos);
+        hill.position.y = -5;
         hill.castShadow = true;
         hill.receiveShadow = true;
 
@@ -303,7 +360,7 @@ function addEnvironmentElements() {
     }
 
     // Add some clouds
-    const numClouds = 15;
+    const numClouds = 5;
 
     for (let i = 0; i < numClouds; i++) {
         const cloudGroup = new THREE.Group();
@@ -330,12 +387,24 @@ function addEnvironmentElements() {
             cloudGroup.add(puff);
         }
 
-        // Position cloud in the sky
-        cloudGroup.position.set(
-            (Math.random() - 0.5) * FIELD_SIZE * 1.5,
-            30 + Math.random() * 15,
-            (Math.random() - 0.5) * FIELD_SIZE * 1.5
-        );
+        // Position cloud in front of the train
+        const angle = (Math.random() - 0.5) * Math.PI; // -90 to +90 degrees from forward direction
+        const distance = 60 + Math.random() * 60; // 60-120 units ahead
+
+        // Calculate position based on train direction
+        const forward = trainDirection.clone().normalize();
+        const right = new THREE.Vector3().crossVectors(forward, new THREE.Vector3(0, 1, 0)).normalize();
+
+        const x = Math.sin(angle) * distance;
+        const z = Math.cos(angle) * distance;
+
+        // Transform to world coordinates
+        const cloudPos = trainPosition.clone()
+            .add(forward.clone().multiplyScalar(z))
+            .add(right.clone().multiplyScalar(x));
+
+        cloudPos.y = 30 + Math.random() * 15;
+        cloudGroup.position.copy(cloudPos);
 
         // Scale cloud
         const scale = 2 + Math.random() * 3;
@@ -402,6 +471,15 @@ function animate() {
     // Update train position
     updateTrainPosition(delta);
 
+    // Update ground position to follow the train
+    updateGroundPosition();
+
+    // Update scenery
+    if (trainPosition.distanceTo(lastSceneryUpdatePosition) > SCENERY_UPDATE_DISTANCE) {
+        lastSceneryUpdatePosition.copy(trainPosition);
+        updateScenery();
+    }
+
     // Update camera position to follow train
     camera.position.copy(trainPosition);
     camera.position.y += 2; // Height of driver's view
@@ -414,6 +492,21 @@ function animate() {
     camera.lookAt(lookAtPoint);
 
     renderer.render(scene, camera);
+}
+
+// Update scenery
+function updateScenery() {
+    // Remove old scenery
+    for (let i = terrain.length - 1; i >= 0; i--) {
+        const object = terrain[i];
+        if (object.position.distanceTo(trainPosition) > FIELD_SIZE * 2) {
+            scene.remove(object);
+            terrain.splice(i, 1);
+        }
+    }
+
+    // Add new scenery
+    addEnvironmentElements();
 }
 
 // Start the application
