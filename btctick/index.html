@@ -6,10 +6,302 @@
     <title>BTC Ticker</title>
     <style>
         body {
-            font-family: monospace;
+            font-family: 'Arial', sans-serif;
+            background-color: #121212;
+            color: #ffffff;
+            margin: 0;
+            padding: 0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+            overflow: hidden;
+        }
+
+        .container {
+            text-align: center;
+            width: 90%;
+            max-width: 1000px;
+        }
+
+        #price {
+            font-size: 3rem;
+            font-weight: bold;
+            margin: 10px 0;
+            color: #f7931a;
+            /* Bitcoin orange */
+            text-shadow: 0 0 10px rgba(247, 147, 26, 0.5);
+        }
+
+        .price-change {
+            font-size: 1.2rem;
+            margin-bottom: 20px;
+        }
+
+        .positive {
+            color: #00c853;
+        }
+
+        .negative {
+            color: #ff3d00;
+        }
+
+        #chart-container {
+            width: 100%;
+            height: 300px;
+            position: relative;
+            background-color: #1e1e1e;
+            border-radius: 10px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5);
+            overflow: hidden;
+        }
+
+        canvas {
+            position: absolute;
+            top: 0;
+            left: 0;
+        }
+
+        .info {
+            margin-top: 20px;
+            font-size: 0.9rem;
+            color: #aaaaaa;
+        }
+
+        .back-link {
+            margin-top: 20px;
+            font-size: 0.9rem;
+        }
+
+        .back-link a {
+            color: #f7931a;
+            text-decoration: none;
+            padding: 5px 10px;
+            border-radius: 5px;
+            transition: all 0.3s ease;
+        }
+
+        .back-link a:hover {
+            background-color: rgba(247, 147, 26, 0.2);
+            text-decoration: underline;
         }
     </style>
+</head>
+
+<body>
+    <div class="container">
+        <h1>BTC/USDT Live Ticker</h1>
+        <div id="price">Loading...</div>
+        <div class="price-change" id="change">Waiting for data...</div>
+        <div id="chart-container">
+            <canvas id="priceChart"></canvas>
+            <canvas id="effectsCanvas"></canvas>
+        </div>
+        <div class="info">Showing last 60 seconds of price data</div>
+        <div class="back-link">
+            <a href="../index.html">← Back to Vibes Home</a>
+        </div>
+    </div>
+
     <script>
+        // Price history array to store the last minute of data
+        const priceHistory = [];
+        const MAX_DATA_POINTS = 60; // One minute at one data point per second
+        let lastPrice = null;
+        let highestPrice = 0;
+        let lowestPrice = Infinity;
+
+        // Canvas setup
+        const chartCanvas = document.getElementById('priceChart');
+        const effectsCanvas = document.getElementById('effectsCanvas');
+        const chartCtx = chartCanvas.getContext('2d');
+        const effectsCtx = effectsCanvas.getContext('2d');
+
+        // Resize canvases to match container size
+        function resizeCanvases() {
+            const container = document.getElementById('chart-container');
+            const width = container.clientWidth;
+            const height = container.clientHeight;
+
+            chartCanvas.width = width;
+            chartCanvas.height = height;
+            effectsCanvas.width = width;
+            effectsCanvas.height = height;
+        }
+
+        // Initial resize and listen for window resize
+        resizeCanvases();
+        window.addEventListener('resize', resizeCanvases);
+
+        // Function to add a price to history
+        function addPriceToHistory(price) {
+            const timestamp = Date.now();
+            priceHistory.push({ price: parseFloat(price), timestamp });
+
+            // Keep only the last minute of data
+            while (priceHistory.length > 0 && timestamp - priceHistory[0].timestamp > 60000) {
+                priceHistory.shift();
+            }
+
+            // Update min/max prices for scaling
+            highestPrice = Math.max(...priceHistory.map(p => p.price));
+            lowestPrice = Math.min(...priceHistory.map(p => p.price));
+
+            // Add a small buffer to min/max for better visualization
+            const buffer = (highestPrice - lowestPrice) * 0.1 || highestPrice * 0.01;
+            highestPrice += buffer;
+            lowestPrice = Math.max(0, lowestPrice - buffer);
+        }
+
+        // Function to draw the price chart
+        function drawChart() {
+            if (priceHistory.length < 2) return;
+
+            const width = chartCanvas.width;
+            const height = chartCanvas.height;
+
+            // Clear the canvas
+            chartCtx.clearRect(0, 0, width, height);
+
+            // Draw background gradient
+            const bgGradient = chartCtx.createLinearGradient(0, 0, 0, height);
+            bgGradient.addColorStop(0, 'rgba(30, 30, 30, 1)');
+            bgGradient.addColorStop(1, 'rgba(10, 10, 10, 1)');
+            chartCtx.fillStyle = bgGradient;
+            chartCtx.fillRect(0, 0, width, height);
+
+            // Draw grid lines
+            chartCtx.strokeStyle = 'rgba(100, 100, 100, 0.2)';
+            chartCtx.lineWidth = 1;
+
+            // Horizontal grid lines
+            const gridLines = 5;
+            for (let i = 0; i <= gridLines; i++) {
+                const y = height - (height * (i / gridLines));
+                chartCtx.beginPath();
+                chartCtx.moveTo(0, y);
+                chartCtx.lineTo(width, y);
+                chartCtx.stroke();
+
+                // Price labels
+                const labelPrice = lowestPrice + ((highestPrice - lowestPrice) * (i / gridLines));
+                chartCtx.fillStyle = 'rgba(200, 200, 200, 0.7)';
+                chartCtx.font = '10px Arial';
+                chartCtx.textAlign = 'left';
+                chartCtx.fillText(labelPrice.toFixed(2), 5, y - 5);
+            }
+
+            // Draw the price line
+            chartCtx.beginPath();
+            const firstPoint = priceHistory[0];
+            const startTime = priceHistory[0].timestamp;
+            const endTime = priceHistory[priceHistory.length - 1].timestamp;
+            const timeRange = endTime - startTime;
+
+            // Map the first point
+            const x1 = 0;
+            const y1 = height - ((firstPoint.price - lowestPrice) / (highestPrice - lowestPrice) * height);
+            chartCtx.moveTo(x1, y1);
+
+            // Create gradient for line
+            const lineGradient = chartCtx.createLinearGradient(0, 0, 0, height);
+            lineGradient.addColorStop(0, '#f7931a'); // Bitcoin orange
+            lineGradient.addColorStop(1, '#e67e22');
+
+            // Draw each point
+            for (let i = 1; i < priceHistory.length; i++) {
+                const point = priceHistory[i];
+                const x = ((point.timestamp - startTime) / timeRange) * width;
+                const y = height - ((point.price - lowestPrice) / (highestPrice - lowestPrice) * height);
+                chartCtx.lineTo(x, y);
+            }
+
+            // Style and stroke the line
+            chartCtx.strokeStyle = lineGradient;
+            chartCtx.lineWidth = 3;
+            chartCtx.stroke();
+
+            // Create area fill
+            chartCtx.lineTo(width, height);
+            chartCtx.lineTo(0, height);
+            chartCtx.closePath();
+
+            // Fill with gradient
+            const areaGradient = chartCtx.createLinearGradient(0, 0, 0, height);
+            areaGradient.addColorStop(0, 'rgba(247, 147, 26, 0.5)');
+            areaGradient.addColorStop(1, 'rgba(247, 147, 26, 0.0)');
+            chartCtx.fillStyle = areaGradient;
+            chartCtx.fill();
+
+            // Draw the latest price point with a glowing effect
+            const latestPoint = priceHistory[priceHistory.length - 1];
+            const latestX = width;
+            const latestY = height - ((latestPoint.price - lowestPrice) / (highestPrice - lowestPrice) * height);
+
+            // Glow effect
+            chartCtx.beginPath();
+            chartCtx.arc(latestX, latestY, 5, 0, Math.PI * 2);
+            chartCtx.fillStyle = '#f7931a';
+            chartCtx.fill();
+
+            // Outer glow
+            chartCtx.beginPath();
+            chartCtx.arc(latestX, latestY, 8, 0, Math.PI * 2);
+            const glowGradient = chartCtx.createRadialGradient(latestX, latestY, 5, latestX, latestY, 15);
+            glowGradient.addColorStop(0, 'rgba(247, 147, 26, 0.8)');
+            glowGradient.addColorStop(1, 'rgba(247, 147, 26, 0)');
+            chartCtx.fillStyle = glowGradient;
+            chartCtx.fill();
+        }
+
+        // Function to create particle effects when price changes
+        function createPriceChangeEffect(isUp) {
+            const particles = [];
+            const particleCount = 20;
+            const color = isUp ? '#00c853' : '#ff3d00';
+
+            for (let i = 0; i < particleCount; i++) {
+                particles.push({
+                    x: effectsCanvas.width / 2,
+                    y: 50, // Near the price display
+                    size: Math.random() * 5 + 2,
+                    speedX: (Math.random() - 0.5) * 10,
+                    speedY: Math.random() * 7 + 3,
+                    life: 1.0, // Full opacity
+                    color: color
+                });
+            }
+
+            function animateParticles() {
+                effectsCtx.clearRect(0, 0, effectsCanvas.width, effectsCanvas.height);
+
+                let hasActiveParticles = false;
+
+                particles.forEach(p => {
+                    if (p.life > 0) {
+                        p.x += p.speedX;
+                        p.y += p.speedY;
+                        p.life -= 0.02;
+
+                        effectsCtx.beginPath();
+                        effectsCtx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
+                        effectsCtx.fillStyle = p.color.replace(')', `, ${p.life})`).replace('rgb', 'rgba');
+                        effectsCtx.fill();
+
+                        hasActiveParticles = true;
+                    }
+                });
+
+                if (hasActiveParticles) {
+                    requestAnimationFrame(animateParticles);
+                }
+            }
+
+            animateParticles();
+        }
+
+        // WebSocket connection
         const socket = new WebSocket("wss://stream.binance.com:9443/stream");
         socket.onopen = () => {
             socket.send(JSON.stringify({
@@ -18,21 +310,46 @@
                 "id": 1
             }));
         };
+
         socket.onmessage = (event) => {
             const data = JSON.parse(event.data);
             if (data.data !== undefined) {
                 const d = data.data;
                 const price = d.p;
                 const priceElement = document.querySelector("#price");
-                priceElement.innerText = price;
+                const changeElement = document.querySelector("#change");
+
+                // Update price display
+                priceElement.innerText = `$${parseFloat(price).toFixed(2)}`;
+
+                // Calculate and show price change
+                if (lastPrice !== null) {
+                    const priceChange = parseFloat(price) - lastPrice;
+                    const priceChangePercent = (priceChange / lastPrice) * 100;
+
+                    changeElement.innerText = `${priceChange >= 0 ? '+' : ''}${priceChange.toFixed(2)} (${priceChangePercent.toFixed(3)}%)`;
+                    changeElement.className = `price-change ${priceChange >= 0 ? 'positive' : 'negative'}`;
+
+                    // Create visual effect for price change
+                    createPriceChangeEffect(priceChange >= 0);
+                }
+
+                // Add price to history
+                addPriceToHistory(price);
+                lastPrice = parseFloat(price);
+
+                // Draw the chart
+                drawChart();
             }
-
         };
-    </script>
-</head>
 
-<body>
-    <p id="price"></p>
+        // Throttled chart update for smoother performance
+        setInterval(() => {
+            if (priceHistory.length > 0) {
+                drawChart();
+            }
+        }, 1000); // Update chart once per second
+    </script>
 </body>
 
 </html>
