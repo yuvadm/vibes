@@ -34,19 +34,6 @@
             text-shadow: 0 0 10px rgba(247, 147, 26, 0.5);
         }
 
-        .price-change {
-            font-size: 1.2rem;
-            margin-bottom: 20px;
-        }
-
-        .positive {
-            color: #00c853;
-        }
-
-        .negative {
-            color: #ff3d00;
-        }
-
         #chart-container {
             width: 100%;
             height: 300px;
@@ -93,10 +80,8 @@
     <div class="container">
         <h1>BTC/USDT Live Ticker</h1>
         <div id="price">Loading...</div>
-        <div class="price-change" id="change">Waiting for data...</div>
         <div id="chart-container">
             <canvas id="priceChart"></canvas>
-            <canvas id="effectsCanvas"></canvas>
         </div>
         <div class="info">Showing last 60 seconds of price data</div>
         <div class="back-link">
@@ -114,9 +99,7 @@
 
         // Canvas setup
         const chartCanvas = document.getElementById('priceChart');
-        const effectsCanvas = document.getElementById('effectsCanvas');
         const chartCtx = chartCanvas.getContext('2d');
-        const effectsCtx = effectsCanvas.getContext('2d');
 
         // Resize canvases to match container size
         function resizeCanvases() {
@@ -126,8 +109,6 @@
 
             chartCanvas.width = width;
             chartCanvas.height = height;
-            effectsCanvas.width = width;
-            effectsCanvas.height = height;
         }
 
         // Initial resize and listen for window resize
@@ -255,52 +236,6 @@
             chartCtx.fill();
         }
 
-        // Function to create particle effects when price changes
-        function createPriceChangeEffect(isUp) {
-            const particles = [];
-            const particleCount = 20;
-            const color = isUp ? '#00c853' : '#ff3d00';
-
-            for (let i = 0; i < particleCount; i++) {
-                particles.push({
-                    x: effectsCanvas.width / 2,
-                    y: 50, // Near the price display
-                    size: Math.random() * 5 + 2,
-                    speedX: (Math.random() - 0.5) * 10,
-                    speedY: Math.random() * 7 + 3,
-                    life: 1.0, // Full opacity
-                    color: color
-                });
-            }
-
-            function animateParticles() {
-                effectsCtx.clearRect(0, 0, effectsCanvas.width, effectsCanvas.height);
-
-                let hasActiveParticles = false;
-
-                particles.forEach(p => {
-                    if (p.life > 0) {
-                        p.x += p.speedX;
-                        p.y += p.speedY;
-                        p.life -= 0.02;
-
-                        effectsCtx.beginPath();
-                        effectsCtx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
-                        effectsCtx.fillStyle = p.color.replace(')', `, ${p.life})`).replace('rgb', 'rgba');
-                        effectsCtx.fill();
-
-                        hasActiveParticles = true;
-                    }
-                });
-
-                if (hasActiveParticles) {
-                    requestAnimationFrame(animateParticles);
-                }
-            }
-
-            animateParticles();
-        }
-
         // WebSocket connection
         const socket = new WebSocket("wss://stream.binance.com:9443/stream");
         socket.onopen = () => {
@@ -317,22 +252,9 @@
                 const d = data.data;
                 const price = d.p;
                 const priceElement = document.querySelector("#price");
-                const changeElement = document.querySelector("#change");
 
                 // Update price display
                 priceElement.innerText = `$${parseFloat(price).toFixed(2)}`;
-
-                // Calculate and show price change
-                if (lastPrice !== null) {
-                    const priceChange = parseFloat(price) - lastPrice;
-                    const priceChangePercent = (priceChange / lastPrice) * 100;
-
-                    changeElement.innerText = `${priceChange >= 0 ? '+' : ''}${priceChange.toFixed(2)} (${priceChangePercent.toFixed(3)}%)`;
-                    changeElement.className = `price-change ${priceChange >= 0 ? 'positive' : 'negative'}`;
-
-                    // Create visual effect for price change
-                    createPriceChangeEffect(priceChange >= 0);
-                }
 
                 // Add price to history
                 addPriceToHistory(price);
@@ -348,7 +270,7 @@
             if (priceHistory.length > 0) {
                 drawChart();
             }
-        }, 1000); // Update chart once per second
+        }, 100); // Update chart once per second
     </script>
 </body>
 
