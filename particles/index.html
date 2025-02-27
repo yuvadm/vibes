@@ -1,0 +1,471 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Interactive Particle System | Vibes</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=VT323&family=Fredoka:wght@400;600&display=swap"
+        rel="stylesheet">
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            overflow: hidden;
+            background: linear-gradient(135deg, #ff6ec4, #7873f5);
+            font-family: 'Fredoka', sans-serif;
+            color: #fff;
+        }
+
+        canvas {
+            display: block;
+            position: absolute;
+            top: 0;
+            left: 0;
+        }
+
+        .controls {
+            position: absolute;
+            bottom: 20px;
+            left: 20px;
+            background-color: rgba(255, 255, 255, 0.2);
+            padding: 15px;
+            border-radius: 15px;
+            backdrop-filter: blur(5px);
+            z-index: 10;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            border: 3px dashed #c1a5e8;
+            box-shadow: 5px 5px 0px rgba(0, 0, 0, 0.2);
+        }
+
+        .control-group {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        label {
+            font-family: 'VT323', monospace;
+            font-size: 1.2rem;
+            min-width: 120px;
+        }
+
+        input[type="range"] {
+            width: 150px;
+            accent-color: #c1a5e8;
+        }
+
+        button {
+            background: #c1a5e8;
+            border: none;
+            padding: 8px 15px;
+            border-radius: 8px;
+            font-family: 'VT323', monospace;
+            font-size: 1.2rem;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            color: #5a3d5c;
+            border: 2px solid #5a3d5c;
+            margin-top: 10px;
+        }
+
+        button:hover {
+            background: #d4c1f0;
+            transform: translateY(-2px);
+        }
+
+        .info {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            background-color: rgba(255, 255, 255, 0.2);
+            padding: 15px;
+            border-radius: 15px;
+            backdrop-filter: blur(5px);
+            z-index: 10;
+            border: 3px dashed #c1a5e8;
+            box-shadow: 5px 5px 0px rgba(0, 0, 0, 0.2);
+            font-family: 'VT323', monospace;
+            font-size: 1.2rem;
+            text-align: right;
+        }
+
+        .home-link {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            background-color: rgba(255, 255, 255, 0.2);
+            padding: 10px 15px;
+            border-radius: 15px;
+            backdrop-filter: blur(5px);
+            z-index: 10;
+            border: 3px dashed #c1a5e8;
+            box-shadow: 5px 5px 0px rgba(0, 0, 0, 0.2);
+            font-family: 'VT323', monospace;
+            font-size: 1.2rem;
+            text-decoration: none;
+            color: #fff;
+            transition: all 0.2s ease;
+        }
+
+        .home-link:hover {
+            background-color: rgba(255, 255, 255, 0.3);
+            transform: translateY(-2px);
+        }
+    </style>
+</head>
+
+<body>
+    <canvas id="particleCanvas"></canvas>
+
+    <a href="../" class="home-link">← Back to Vibes</a>
+
+    <div class="info">
+        <div id="fps">FPS: 0</div>
+        <div id="particleCount">Particles: 0</div>
+        <div id="deviceInfo">Device orientation: Not available</div>
+    </div>
+
+    <div class="controls">
+        <div class="control-group">
+            <label for="particleCount">Particles:</label>
+            <input type="range" id="particleCountSlider" min="100" max="5000" value="1000" step="100">
+            <span id="particleCountValue">1000</span>
+        </div>
+
+        <div class="control-group">
+            <label for="particleSize">Size:</label>
+            <input type="range" id="particleSizeSlider" min="1" max="20" value="5" step="1">
+            <span id="particleSizeValue">5</span>
+        </div>
+
+        <div class="control-group">
+            <label for="particleSpeed">Speed:</label>
+            <input type="range" id="particleSpeedSlider" min="1" max="10" value="3" step="0.5">
+            <span id="particleSpeedValue">3</span>
+        </div>
+
+        <div class="control-group">
+            <label for="interactionRadius">Interaction:</label>
+            <input type="range" id="interactionRadiusSlider" min="50" max="300" value="150" step="10">
+            <span id="interactionRadiusValue">150</span>
+        </div>
+
+        <button id="resetBtn">Reset</button>
+    </div>
+
+    <script>
+        // Canvas setup
+        const canvas = document.getElementById('particleCanvas');
+        const ctx = canvas.getContext('2d');
+
+        // Performance monitoring
+        let lastTime = performance.now();
+        let frameCount = 0;
+        let fps = 0;
+
+        // Resize canvas to fill window
+        function resizeCanvas() {
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+        }
+
+        window.addEventListener('resize', () => {
+            resizeCanvas();
+            initParticles(); // Reinitialize particles when resizing
+        });
+
+        resizeCanvas();
+
+        // Controls
+        const particleCountSlider = document.getElementById('particleCountSlider');
+        const particleSizeSlider = document.getElementById('particleSizeSlider');
+        const particleSpeedSlider = document.getElementById('particleSpeedSlider');
+        const interactionRadiusSlider = document.getElementById('interactionRadiusSlider');
+        const resetBtn = document.getElementById('resetBtn');
+
+        // Display values
+        const particleCountValue = document.getElementById('particleCountValue');
+        const particleSizeValue = document.getElementById('particleSizeValue');
+        const particleSpeedValue = document.getElementById('particleSpeedValue');
+        const interactionRadiusValue = document.getElementById('interactionRadiusValue');
+        const fpsDisplay = document.getElementById('fps');
+        const particleCountDisplay = document.getElementById('particleCount');
+        const deviceInfoDisplay = document.getElementById('deviceInfo');
+
+        // Settings
+        let settings = {
+            particleCount: parseInt(particleCountSlider.value),
+            particleSize: parseInt(particleSizeSlider.value),
+            particleSpeed: parseFloat(particleSpeedSlider.value),
+            interactionRadius: parseInt(interactionRadiusSlider.value),
+        };
+
+        // Update settings display
+        function updateSettingsDisplay() {
+            particleCountValue.textContent = settings.particleCount;
+            particleSizeValue.textContent = settings.particleSize;
+            particleSpeedValue.textContent = settings.particleSpeed;
+            interactionRadiusValue.textContent = settings.interactionRadius;
+        }
+
+        // Event listeners for controls
+        particleCountSlider.addEventListener('input', () => {
+            settings.particleCount = parseInt(particleCountSlider.value);
+            updateSettingsDisplay();
+            initParticles();
+        });
+
+        particleSizeSlider.addEventListener('input', () => {
+            settings.particleSize = parseInt(particleSizeSlider.value);
+            updateSettingsDisplay();
+        });
+
+        particleSpeedSlider.addEventListener('input', () => {
+            settings.particleSpeed = parseFloat(particleSpeedSlider.value);
+            updateSettingsDisplay();
+        });
+
+        interactionRadiusSlider.addEventListener('input', () => {
+            settings.interactionRadius = parseInt(interactionRadiusSlider.value);
+            updateSettingsDisplay();
+        });
+
+        resetBtn.addEventListener('click', () => {
+            initParticles();
+        });
+
+        // Mouse interaction
+        let mouse = {
+            x: undefined,
+            y: undefined,
+            isClicking: false
+        };
+
+        window.addEventListener('mousemove', (event) => {
+            mouse.x = event.x;
+            mouse.y = event.y;
+        });
+
+        window.addEventListener('mousedown', () => {
+            mouse.isClicking = true;
+        });
+
+        window.addEventListener('mouseup', () => {
+            mouse.isClicking = false;
+        });
+
+        window.addEventListener('touchmove', (event) => {
+            mouse.x = event.touches[0].clientX;
+            mouse.y = event.touches[0].clientY;
+        });
+
+        window.addEventListener('touchstart', () => {
+            mouse.isClicking = true;
+        });
+
+        window.addEventListener('touchend', () => {
+            mouse.isClicking = false;
+        });
+
+        // Device orientation
+        let deviceOrientation = {
+            beta: 0,  // x-axis (front-to-back tilt)
+            gamma: 0, // y-axis (left-to-right tilt)
+            available: false
+        };
+
+        window.addEventListener('deviceorientation', (event) => {
+            deviceOrientation.beta = event.beta;
+            deviceOrientation.gamma = event.gamma;
+            deviceOrientation.available = true;
+
+            deviceInfoDisplay.textContent = `Tilt: X ${Math.round(event.beta)}° Y ${Math.round(event.gamma)}°`;
+        });
+
+        // Particle class
+        class Particle {
+            constructor() {
+                this.reset();
+            }
+
+            reset() {
+                // Position
+                this.x = Math.random() * canvas.width;
+                this.y = Math.random() * canvas.height;
+
+                // Velocity
+                const angle = Math.random() * Math.PI * 2;
+                const speed = Math.random() * settings.particleSpeed;
+                this.vx = Math.cos(angle) * speed;
+                this.vy = Math.sin(angle) * speed;
+
+                // Appearance
+                this.size = Math.random() * settings.particleSize + 1;
+                this.baseColor = this.getRandomColor();
+                this.color = this.baseColor;
+                this.alpha = Math.random() * 0.5 + 0.5;
+
+                // Physics properties
+                this.mass = this.size;
+                this.friction = 0.95;
+                this.interacting = false;
+            }
+
+            getRandomColor() {
+                const colors = [
+                    '#ff6ec4', // Pink
+                    '#7873f5', // Purple
+                    '#c1a5e8', // Light purple
+                    '#5a3d5c', // Dark purple
+                    '#ffd6e0'  // Light pink
+                ];
+                return colors[Math.floor(Math.random() * colors.length)];
+            }
+
+            update() {
+                // Apply velocity
+                this.x += this.vx;
+                this.y += this.vy;
+
+                // Apply friction
+                this.vx *= this.friction;
+                this.vy *= this.friction;
+
+                // Screen boundaries
+                if (this.x < 0) {
+                    this.x = 0;
+                    this.vx *= -1;
+                } else if (this.x > canvas.width) {
+                    this.x = canvas.width;
+                    this.vx *= -1;
+                }
+
+                if (this.y < 0) {
+                    this.y = 0;
+                    this.vy *= -1;
+                } else if (this.y > canvas.height) {
+                    this.y = canvas.height;
+                    this.vy *= -1;
+                }
+
+                // Mouse interaction
+                if (mouse.x !== undefined && mouse.y !== undefined) {
+                    const dx = mouse.x - this.x;
+                    const dy = mouse.y - this.y;
+                    const distance = Math.sqrt(dx * dx + dy * dy);
+
+                    if (distance < settings.interactionRadius) {
+                        this.interacting = true;
+
+                        // Calculate force (inverse square law)
+                        const force = settings.interactionRadius / (distance * distance + 1);
+
+                        if (mouse.isClicking) {
+                            // Attract to mouse when clicking
+                            this.vx += dx / distance * force * 0.2;
+                            this.vy += dy / distance * force * 0.2;
+                        } else {
+                            // Repel from mouse when not clicking
+                            this.vx -= dx / distance * force * 0.1;
+                            this.vy -= dy / distance * force * 0.1;
+                        }
+
+                        // Change color when interacting
+                        this.color = '#ffffff';
+                    } else {
+                        this.interacting = false;
+                        this.color = this.baseColor;
+                    }
+                }
+
+                // Device orientation influence (if available)
+                if (deviceOrientation.available) {
+                    // Apply subtle force based on device tilt
+                    this.vx += (deviceOrientation.gamma / 90) * 0.05;
+                    this.vy += (deviceOrientation.beta / 90) * 0.05;
+                }
+            }
+
+            draw() {
+                ctx.beginPath();
+                ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
+                ctx.fillStyle = this.color;
+                ctx.globalAlpha = this.alpha;
+                ctx.fill();
+
+                // Draw connection lines between nearby particles
+                particles.forEach(otherParticle => {
+                    if (this === otherParticle) return;
+
+                    const dx = this.x - otherParticle.x;
+                    const dy = this.y - otherParticle.y;
+                    const distance = Math.sqrt(dx * dx + dy * dy);
+
+                    if (distance < 100) {
+                        ctx.beginPath();
+                        ctx.moveTo(this.x, this.y);
+                        ctx.lineTo(otherParticle.x, otherParticle.y);
+                        ctx.strokeStyle = this.interacting ? '#ffffff' : this.color;
+                        ctx.globalAlpha = 0.2 * (1 - distance / 100);
+                        ctx.stroke();
+                    }
+                });
+
+                ctx.globalAlpha = 1;
+            }
+        }
+
+        // Particles array
+        let particles = [];
+
+        // Initialize particles
+        function initParticles() {
+            particles = [];
+            for (let i = 0; i < settings.particleCount; i++) {
+                particles.push(new Particle());
+            }
+        }
+
+        // Animation loop
+        function animate() {
+            requestAnimationFrame(animate);
+
+            // Clear canvas with semi-transparent background for trail effect
+            ctx.fillStyle = 'rgba(0, 0, 0, 0.1)';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+            // Update and draw particles
+            particles.forEach(particle => {
+                particle.update();
+                particle.draw();
+            });
+
+            // Calculate FPS
+            frameCount++;
+            const currentTime = performance.now();
+            const elapsed = currentTime - lastTime;
+
+            if (elapsed >= 1000) {
+                fps = Math.round((frameCount * 1000) / elapsed);
+                frameCount = 0;
+                lastTime = currentTime;
+
+                // Update performance display
+                fpsDisplay.textContent = `FPS: ${fps}`;
+                particleCountDisplay.textContent = `Particles: ${particles.length}`;
+            }
+        }
+
+        // Initialize and start animation
+        updateSettingsDisplay();
+        initParticles();
+        animate();
+    </script>
+</body>
+
+</html>
