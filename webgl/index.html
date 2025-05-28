@@ -1,0 +1,441 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>WebGL Experiment | Vibes</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=VT323&family=Fredoka:wght@400;600&display=swap"
+        rel="stylesheet">
+    <script src="https://cdn.usefathom.com/script.js" data-site="YZVJPTBZ" defer></script>
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            overflow: hidden;
+            background: linear-gradient(135deg, #7873f5, #ff6ec4);
+            font-family: 'Fredoka', sans-serif;
+            color: #fff;
+        }
+
+        canvas {
+            display: block;
+            width: 100vw;
+            height: 100vh;
+            position: fixed;
+            top: 0;
+            left: 0;
+            z-index: -1;
+        }
+
+        .controls {
+            position: absolute;
+            bottom: 20px;
+            left: 20px;
+            background-color: rgba(255, 255, 255, 0.2);
+            padding: 15px;
+            border-radius: 15px;
+            backdrop-filter: blur(5px);
+            z-index: 10;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            border: 3px dashed #c1a5e8;
+            box-shadow: 5px 5px 0px rgba(0, 0, 0, 0.2);
+        }
+
+        .control-group {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        label {
+            font-family: 'VT323', monospace;
+            font-size: 1.2rem;
+            min-width: 120px;
+        }
+
+        input[type="range"] {
+            width: 150px;
+            accent-color: #c1a5e8;
+        }
+
+        button {
+            background: #c1a5e8;
+            border: none;
+            padding: 8px 15px;
+            border-radius: 8px;
+            font-family: 'VT323', monospace;
+            font-size: 1.2rem;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            color: #5a3d5c;
+            border: 2px solid #5a3d5c;
+            margin-top: 10px;
+        }
+
+        button:hover {
+            background: #d4c1f0;
+            transform: translateY(-2px);
+        }
+
+        .info {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            background-color: rgba(255, 255, 255, 0.2);
+            padding: 15px;
+            border-radius: 15px;
+            backdrop-filter: blur(5px);
+            z-index: 10;
+            border: 3px dashed #c1a5e8;
+            box-shadow: 5px 5px 0px rgba(0, 0, 0, 0.2);
+            font-family: 'VT323', monospace;
+            font-size: 1.2rem;
+            text-align: right;
+        }
+
+        .home-link {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            background-color: rgba(255, 255, 255, 0.2);
+            padding: 10px 15px;
+            border-radius: 15px;
+            backdrop-filter: blur(5px);
+            z-index: 10;
+            border: 3px dashed #c1a5e8;
+            box-shadow: 5px 5px 0px rgba(0, 0, 0, 0.2);
+            font-family: 'VT323', monospace;
+            font-size: 1.2rem;
+            text-decoration: none;
+            color: #fff;
+            transition: all 0.2s ease;
+        }
+
+        .home-link:hover {
+            background-color: rgba(255, 255, 255, 0.3);
+            transform: translateY(-2px);
+        }
+    </style>
+</head>
+
+<body>
+    <canvas id="webglCanvas"></canvas>
+
+    <a href="../" class="home-link">← Back to Vibes</a>
+
+    <script>
+        function initTopoShader() {
+            const canvas = document.getElementById("webglCanvas");
+            if (!canvas) {
+                console.error(
+                    "TopoShader: Canvas element #webglCanvas not found!",
+                );
+                return;
+            }
+
+            // Request WebGL2 context directly
+            const gl = canvas.getContext("webgl2");
+
+            if (!gl) {
+                console.error(
+                    "TopoShader: WebGL2 not supported or context creation failed! This demo requires WebGL2.",
+                );
+                canvas.style.display = "none"; // Hide canvas if WebGL2 is not available
+                const fallbackMessage = document.createElement("p");
+                fallbackMessage.textContent =
+                    "WebGL2 is required for this animation but is not supported by your browser or hardware.";
+                fallbackMessage.style.color = "white";
+                fallbackMessage.style.textAlign = "center";
+                fallbackMessage.style.padding = "20px";
+                // Insert before the canvas or at the top of body
+                if (canvas.parentNode) {
+                    canvas.parentNode.insertBefore(fallbackMessage, canvas);
+                } else {
+                    document.body.insertBefore(
+                        fallbackMessage,
+                        document.body.firstChild,
+                    );
+                }
+                return;
+            }
+            console.log("TopoShader: Using WebGL2 context.");
+
+            // --- Vertex Shader (WebGL2 syntax) ---
+            const vsSource = `\
+#version 300 es
+
+in vec4 a_position;
+
+void main() {
+  gl_Position = a_position;
+}
+`;
+            const fsSource = `\
+#version 300 es
+precision highp float;
+
+out vec4 out_FragColor;
+
+uniform vec2 u_resolution;
+uniform float u_time;
+
+// --- Simplex Noise (snoise) ---
+// (Full snoise function code)
+vec3 mod289(vec3 x) { return x - floor(x * (1.0 / 289.0)) * 289.0; }
+vec4 mod289(vec4 x) { return x - floor(x * (1.0 / 289.0)) * 289.0; }
+vec4 permute(vec4 x) { return mod289(((x*34.0)+10.0)*x); }
+vec4 taylorInvSqrt(vec4 r) { return 1.79284291400159 - 0.85373472095314 * r; }
+float snoise(vec3 v) { 
+  const vec2  C = vec2(1.0/6.0, 1.0/3.0) ; const vec4  D = vec4(0.0, 0.5, 1.0, 2.0);
+  vec3 i  = floor(v + dot(v, C.yyy) ); vec3 x0 = v - i + dot(i, C.xxx);
+  vec3 g = step(x0.yzx, x0.xyz); vec3 l = 1.0 - g; vec3 i1 = min( g.xyz, l.zxy ); vec3 i2 = max( g.xyz, l.zxy );
+  vec3 x1 = x0 - i1 + C.xxx; vec3 x2 = x0 - i2 + C.yyy; vec3 x3 = x0 - D.yyy;
+  i = mod289(i); 
+  vec4 p = permute( permute( permute( i.z + vec4(0.0, i1.z, i2.z, 1.0 )) + i.y + vec4(0.0, i1.y, i2.y, 1.0 )) + i.x + vec4(0.0, i1.x, i2.x, 1.0 ));
+  float n_ = 0.142857142857; vec3  ns = n_ * D.wyz - D.xzx;
+  vec4 j = p - 49.0 * floor(p * ns.z * ns.z);
+  vec4 x_ = floor(j * ns.z); vec4 y_ = floor(j - 7.0 * x_ );
+  vec4 x = x_ *ns.x + ns.yyyy; vec4 y = y_ *ns.x + ns.yyyy; vec4 h = 1.0 - abs(x) - abs(y);
+  vec4 b0 = vec4( x.xy, y.xy ); vec4 b1 = vec4( x.zw, y.zw );
+  vec4 s0 = floor(b0)*2.0 + 1.0; vec4 s1 = floor(b1)*2.0 + 1.0; vec4 sh = -step(h, vec4(0.0));
+  vec4 a0 = b0.xzyw + s0.xzyw*sh.xxyy ; vec4 a1 = b1.xzyw + s1.xzyw*sh.zzww ;
+  vec3 p0 = vec3(a0.xy,h.x); vec3 p1 = vec3(a0.zw,h.y); vec3 p2 = vec3(a1.xy,h.z); vec3 p3 = vec3(a1.zw,h.w);
+  vec4 norm = taylorInvSqrt(vec4(dot(p0,p0), dot(p1,p1), dot(p2, p2), dot(p3,p3)));
+  p0 *= norm.x; p1 *= norm.y; p2 *= norm.z; p3 *= norm.w;
+  vec4 m = max(0.5 - vec4(dot(x0,x0), dot(x1,x1), dot(x2,x2), dot(x3,x3)), 0.0);
+  m = m * m;
+  return 105.0 * dot( m*m, vec4( dot(p0,x0), dot(p1,x1), dot(p2,x2), dot(p3,x3) ) );
+}
+
+// --- Colormap Function ---
+vec3 colormap_clean(float t) {
+  t = clamp(t, 0.0, 1.0); // Ensure t is in [0,1]
+
+  // Palette: ["#ffbe0b","#fb5607","#ff006e","#8338ec","#3a86ff"]
+  vec3 color1 = vec3(1.000, 0.745, 0.043); // #ffbe0b (Yellow)
+  vec3 color2 = vec3(0.984, 0.337, 0.027); // #fb5607 (Orange)
+  vec3 color3 = vec3(1.000, 0.000, 0.431); // #ff006e (Pink/Magenta)
+  vec3 color4 = vec3(0.514, 0.220, 0.925); // #8338ec (Purple)
+  vec3 color5 = vec3(0.227, 0.525, 1.000); // #3a86ff (Blue)
+
+  // We have 5 colors, so 4 segments for interpolation.
+  // Each segment will take up 1.0 / 4.0 = 0.25 of the range.
+  float segment_length = 0.25; //  1.0 / (number of colors - 1)
+
+  if (t < segment_length) { // 0.0 to 0.25
+    return mix(color1, color2, t / segment_length);
+  } else if (t < segment_length * 2.0) { // 0.25 to 0.50
+    return mix(color2, color3, (t - segment_length) / segment_length);
+  } else if (t < segment_length * 3.0) { // 0.50 to 0.75
+    return mix(color3, color4, (t - segment_length * 2.0) / segment_length);
+  } else { // 0.75 to 1.0
+    return mix(color4, color5, (t - segment_length * 3.0) / segment_length);
+  }
+}
+
+void main() {
+  vec2 fragCoord_scaled = gl_FragCoord.xy * (0.003 * 1.5); 
+  float time_scaled = u_time * 0.025;
+  
+  vec3 noise_input = vec3(fragCoord_scaled, time_scaled);
+  float noise_val = snoise(noise_input);
+  noise_val = (noise_val + 1.0) / 2.0;
+
+  float levels = 10.0; 
+  float band_value_for_color = floor(noise_val * levels) / levels;
+  float pos_in_band_segment = fract(noise_val * levels); // Value from 0.0 to 1.0 within the segment
+
+  float line_width_target = 0.5; // The "solid" part of the line
+
+  // ---- SIMPLER ANTI-ALIASING ----
+  // Define a "feather" or "softness" amount. This is how much extra space on EACH side of the
+  // line_width_target will be used for the smooth transition.
+  // This value is also in the [0,1] space of pos_in_band_segment.
+  // A smaller value = sharper edge. A larger value = softer, wider perceived line.
+  float feather = 0.1; // Try values like 0.01, 0.02, 0.03, 0.05
+
+  // Calculate the edges for smoothstep
+  // Edge0: where the line starts to fade IN (inner edge of feathering)
+  // Edge1: where the line is fully opaque (outer edge of feathering for fade-in, start of solid part)
+  // Edge2: where the line starts to fade OUT (end of solid part, inner edge of feathering for fade-out)
+  // Edge3: where the line is fully transparent (outer edge of feathering for fade-out)
+
+  // The line effectively "exists" from 0 to line_width_target.
+  // We want to smooth the transition around 0 and around line_width_target.
+
+  float edge0 = 0.0 - feather;            // Start fading in before 0
+  float edge1 = 0.0 + feather;            // Fully faded in after 0
+  float edge2 = line_width_target - feather; // Start fading out before line_width_target
+  float edge3 = line_width_target + feather; // Fully faded out after line_width_target
+
+  // Alpha contribution from the "fade-in" part (from edge0 to edge1)
+  float alpha_in = smoothstep(edge0, edge1, pos_in_band_segment);
+  
+  // Alpha contribution from the "fade-out" part (from edge2 to edge3)
+  // This needs to be 1.0 when pos_in_band_segment < edge2, and ramp down to 0.0 at edge3.
+  float alpha_out = 1.0 - smoothstep(edge2, edge3, pos_in_band_segment);
+
+  // The final alpha is the minimum of these two, ensuring it forms a band.
+  // This creates a plateau of 1.0 between edge1 and edge2.
+  float line_alpha = min(alpha_in, alpha_out);
+  
+  line_alpha = clamp(line_alpha, 0.0, 1.0); // Just in case
+
+  // Alternative: A simpler single smoothstep if line_width_target is the center
+  // and feather is half the total width of the smoothed line. This is for a line
+  // *centered* at line_width_target / 2.
+  // Our current line starts at 0.
+  // float line_center = line_width_target / 2.0;
+  // float half_line_plus_feather = line_width_target / 2.0 + feather;
+  // line_alpha = 1.0 - smoothstep(line_center - half_line_plus_feather,
+  //                               line_center + half_line_plus_feather,
+  //                               abs(pos_in_band_segment - line_center));
+  // This alternative approach creates a line centered around line_center with a total
+  // smoothed width of 2.0 * half_line_plus_feather.
+  // For our current setup where the line starts at 0 and goes to line_width_target,
+  // the min(alpha_in, alpha_out) is more direct.
+
+  vec3 final_color_rgb = vec3(0.0);
+  if (line_alpha > 0.001) {
+      final_color_rgb = colormap_clean(band_value_for_color);
+  }
+
+  out_FragColor = vec4(final_color_rgb, line_alpha);
+}
+`;
+
+            // --- Shader Program Setup ---
+            function createShader(glInstance, type, source) {
+                const shader = glInstance.createShader(type);
+                glInstance.shaderSource(shader, source);
+                glInstance.compileShader(shader);
+                if (
+                    !glInstance.getShaderParameter(
+                        shader,
+                        glInstance.COMPILE_STATUS,
+                    )
+                ) {
+                    const shaderType =
+                        type === glInstance.VERTEX_SHADER ? "Vertex" : "Fragment";
+                    console.error(
+                        `TopoShader: Error compiling ${shaderType} shader:\n${glInstance.getShaderInfoLog(shader)}`,
+                    );
+                    const sourceLines = source.split("\n");
+                    let formattedSource = "";
+                    for (let i = 0; i < sourceLines.length; i++) {
+                        formattedSource += `${i + 1}: ${sourceLines[i]}\n`;
+                    }
+                    console.error("Shader Source:\n" + formattedSource);
+                    glInstance.deleteShader(shader);
+                    return null;
+                }
+                return shader;
+            }
+
+            const vertexShader = createShader(gl, gl.VERTEX_SHADER, vsSource);
+            const fragmentShader = createShader(gl, gl.FRAGMENT_SHADER, fsSource);
+
+            if (!vertexShader || !fragmentShader) {
+                console.error("TopoShader: Shader creation failed. Aborting.");
+                return;
+            }
+
+            const program = gl.createProgram();
+            gl.attachShader(program, vertexShader);
+            gl.attachShader(program, fragmentShader);
+            gl.linkProgram(program);
+
+            if (!gl.getProgramParameter(program, gl.LINK_STATUS)) {
+                console.error(
+                    "TopoShader: Error linking program: " +
+                    gl.getProgramInfoLog(program),
+                );
+                return;
+            }
+
+            // --- Data, Attributes, Uniforms ---
+            const positionBuffer = gl.createBuffer();
+            gl.bindBuffer(gl.ARRAY_BUFFER, positionBuffer);
+            const positions = [-1, -1, 1, -1, -1, 1, -1, 1, 1, -1, 1, 1];
+            gl.bufferData(
+                gl.ARRAY_BUFFER,
+                new Float32Array(positions),
+                gl.STATIC_DRAW,
+            );
+
+            // Note: In WebGL2, you might query attribute locations before linking,
+            // or use layout qualifiers in GLSL. getAttribLocation after linking is fine.
+            const positionAttributeLocation = gl.getAttribLocation(
+                program,
+                "a_position",
+            );
+            const resolutionUniformLocation = gl.getUniformLocation(
+                program,
+                "u_resolution",
+            );
+            const timeUniformLocation = gl.getUniformLocation(program, "u_time");
+
+            // --- Render Loop ---
+            let animationFrameId = null;
+            function render(time) {
+                time *= 0.001;
+
+                const displayWidth = canvas.clientWidth;
+                const displayHeight = canvas.clientHeight;
+                if (
+                    canvas.width !== displayWidth ||
+                    canvas.height !== displayHeight
+                ) {
+                    canvas.width = displayWidth;
+                    canvas.height = displayHeight;
+                    gl.viewport(0, 0, gl.canvas.width, gl.canvas.height);
+                }
+
+                gl.clearColor(0.0, 0.0, 0.0, 0.0);
+                gl.clear(gl.COLOR_BUFFER_BIT);
+
+                gl.enable(gl.BLEND);
+                gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA);
+
+                gl.useProgram(program);
+
+                gl.enableVertexAttribArray(positionAttributeLocation);
+                gl.bindBuffer(gl.ARRAY_BUFFER, positionBuffer);
+                // For WebGL2, ensure vertexAttribPointer types match 'in' variable type in shader
+                gl.vertexAttribPointer(
+                    positionAttributeLocation,
+                    2,
+                    gl.FLOAT,
+                    false,
+                    0,
+                    0,
+                );
+
+                gl.uniform2f(
+                    resolutionUniformLocation,
+                    gl.canvas.width,
+                    gl.canvas.height,
+                );
+                gl.uniform1f(timeUniformLocation, time);
+
+                gl.drawArrays(gl.TRIANGLES, 0, 6);
+
+                animationFrameId = requestAnimationFrame(render);
+            }
+            animationFrameId = requestAnimationFrame(render);
+        }
+
+        if (document.readyState === "loading") {
+            document.addEventListener("DOMContentLoaded", initTopoShader);
+        } else {
+            initTopoShader();
+        }
+    </script>
+</body>
+
+</html>
