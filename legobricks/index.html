@@ -1,0 +1,332 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Resizable LEGO Brick Container</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=VT323&family=Fredoka:wght@400;600&display=swap"
+        rel="stylesheet">
+    <script src="https://cdn.usefathom.com/script.js" data-site="YZVJPTBZ" defer></script>
+    <style>
+        /* LEGO Grid Variables */
+        :root {
+            --brick-peg-size: 8px;
+            --brick-wall-thickness: 3px;
+            --brick-square: calc(var(--brick-peg-size) + var(--brick-wall-thickness) * 2);
+        }
+
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            margin: 0;
+            padding: 20px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            font-family: 'Arial', sans-serif;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 20px;
+        }
+
+        .back-link {
+            position: fixed;
+            top: 20px;
+            left: 20px;
+            background: rgba(255, 255, 255, 0.2);
+            color: white;
+            text-decoration: none;
+            padding: 8px 15px;
+            border-radius: 20px;
+            font-family: 'VT323', monospace;
+            font-size: 18px;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            backdrop-filter: blur(5px);
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            transition: all 0.3s ease;
+        }
+
+        .back-link:hover {
+            background: rgba(255, 255, 255, 0.3);
+            transform: translateY(-2px);
+        }
+
+        .container {
+            width: 400px;
+            height: 300px;
+            position: relative;
+            background: #f0f0f0;
+            border: 3px solid #333;
+            border-radius: 12px;
+            overflow: hidden;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+            resize: both;
+            min-width: 200px;
+            min-height: 150px;
+            max-width: 800px;
+            max-height: 600px;
+        }
+
+        .lego-grid {
+            width: 100%;
+            height: 100%;
+            display: grid;
+            gap: 0px;
+            padding: 0;
+        }
+
+        .brick {
+            background-color: currentColor;
+            padding: var(--brick-wall-thickness);
+            width: var(--brick-square);
+            height: var(--brick-square);
+            box-shadow: inset -1px -1px 0 rgba(0, 0, 0, .3), inset 1px 1px 0 rgba(255, 255, 255, .3);
+            background-image:
+                radial-gradient(currentColor calc(var(--brick-peg-size)/2), transparent calc(var(--brick-peg-size)/2 + 1px)),
+                radial-gradient(rgba(255, 255, 255, .6) calc(var(--brick-peg-size)/2), transparent calc(var(--brick-peg-size)/2 + 1px)),
+                radial-gradient(rgba(0, 0, 0, .2) calc(var(--brick-peg-size)/2), transparent calc(var(--brick-peg-size)/2 + var(--brick-wall-thickness)/2));
+            background-size: var(--brick-square) var(--brick-square);
+            background-position: 0px 0px, -.5px -.5px, 0px 0px;
+            background-repeat: no-repeat;
+        }
+
+        .controls {
+            display: flex;
+            gap: 15px;
+            align-items: center;
+            background: rgba(255, 255, 255, 0.1);
+            padding: 15px 20px;
+            border-radius: 12px;
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            color: white;
+        }
+
+        .control-group {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 5px;
+        }
+
+        .control-label {
+            font-size: 12px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            opacity: 0.8;
+        }
+
+        .palette-selector {
+            background: rgba(255, 255, 255, 0.2);
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            border-radius: 8px;
+            padding: 8px 12px;
+            color: white;
+            font-size: 14px;
+            font-weight: 500;
+            cursor: pointer;
+            backdrop-filter: blur(5px);
+        }
+
+        .palette-selector:focus {
+            outline: none;
+            border-color: rgba(255, 255, 255, 0.6);
+        }
+
+        .refresh-btn {
+            background: linear-gradient(135deg, #ff6b6b, #ee5a24);
+            border: none;
+            border-radius: 8px;
+            padding: 10px 16px;
+            color: white;
+            font-weight: 600;
+            cursor: pointer;
+            transition: transform 0.2s, box-shadow 0.2s;
+            font-size: 14px;
+        }
+
+        .refresh-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 20px rgba(255, 107, 107, 0.4);
+        }
+
+        .info {
+            color: white;
+            text-align: center;
+            opacity: 0.9;
+            font-size: 14px;
+            max-width: 500px;
+        }
+
+        .resize-hint {
+            position: absolute;
+            bottom: 5px;
+            right: 5px;
+            background: rgba(0, 0, 0, 0.7);
+            color: white;
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 10px;
+            pointer-events: none;
+            opacity: 0.6;
+        }
+
+        /* Color palette indicators */
+        .palette-preview {
+            display: flex;
+            gap: 2px;
+            margin-top: 5px;
+        }
+
+        .color-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            border: 1px solid rgba(255, 255, 255, 0.3);
+        }
+    </style>
+</head>
+
+<body>
+    <a href="../" class="back-link">← Back to Vibes</a>
+    <div class="controls">
+        <div class="control-group">
+            <div class="control-label">Palette</div>
+            <select class="palette-selector" id="paletteSelector">
+                <option value="vibrant">Vibrant</option>
+                <option value="pastel">Pastel</option>
+                <option value="neon">Neon</option>
+                <option value="earth">Earth Tones</option>
+                <option value="ocean">Ocean</option>
+                <option value="sunset">Sunset</option>
+                <option value="monochrome">Monochrome</option>
+                <option value="retro">Retro</option>
+            </select>
+            <div class="palette-preview" id="palettePreview"></div>
+        </div>
+
+        <div class="control-group">
+            <div class="control-label">Actions</div>
+            <button class="refresh-btn" onclick="regenerateGrid()">🎲 Randomize</button>
+        </div>
+    </div>
+
+    <div class="container" id="legoContainer">
+        <div class="lego-grid" id="legoGrid"></div>
+        <div class="resize-hint">Drag corner to resize</div>
+    </div>
+
+    <div class="info">
+        Drag the bottom-right corner to resize the container. The LEGO bricks will automatically fill the space with
+        random colors from the selected palette.
+    </div>
+
+    <script>
+        // Color palettes
+        const colorPalettes = {
+            vibrant: ['#e74c3c', '#3498db', '#2ecc71', '#f39c12', '#9b59b6', '#e67e22', '#1abc9c', '#f1c40f'],
+            pastel: ['#ffb3ba', '#ffdfba', '#ffffba', '#baffc9', '#bae1ff', '#d4b5ff', '#ffb3d9', '#c9ffba'],
+            neon: ['#ff073a', '#40e0d0', '#ff4500', '#ffff00', '#ff1493', '#00ff00', '#ff6347', '#da70d6'],
+            earth: ['#8b4513', '#daa520', '#228b22', '#d2691e', '#b8860b', '#a0522d', '#556b2f', '#cd853f'],
+            ocean: ['#006994', '#0077be', '#4682b4', '#5f9ea0', '#20b2aa', '#48d1cc', '#00ced1', '#1e90ff'],
+            sunset: ['#ff6b35', '#f7931e', '#ffd23f', '#ff4757', '#ff3838', '#ff7675', '#fd79a8', '#fdcb6e'],
+            monochrome: ['#2c3e50', '#34495e', '#7f8c8d', '#95a5a6', '#bdc3c7', '#d5dbdb', '#ecf0f1', '#515a5a'],
+            retro: ['#ff6b6b', '#4ecdc4', '#45b7d1', '#96ceb4', '#ffeaa7', '#dda0dd', '#98d8c8', '#f7dc6f']
+        };
+
+        let currentPalette = 'vibrant';
+        let resizeObserver;
+
+        function getRandomColor() {
+            const palette = colorPalettes[currentPalette];
+            return palette[Math.floor(Math.random() * palette.length)];
+        }
+
+        function updatePalettePreview() {
+            const preview = document.getElementById('palettePreview');
+            const palette = colorPalettes[currentPalette];
+            preview.innerHTML = '';
+
+            palette.slice(0, 6).forEach(color => {
+                const dot = document.createElement('div');
+                dot.className = 'color-dot';
+                dot.style.backgroundColor = color;
+                preview.appendChild(dot);
+            });
+        }
+
+        function generateGrid() {
+            const container = document.getElementById('legoContainer');
+            const grid = document.getElementById('legoGrid');
+            const brickSize = 14; // Size of each brick in pixels
+
+            // Get container dimensions
+            const containerRect = container.getBoundingClientRect();
+            const containerWidth = container.clientWidth;
+            const containerHeight = container.clientHeight;
+
+            // Calculate how many bricks fit
+            const cols = Math.floor(containerWidth / brickSize);
+            const rows = Math.floor(containerHeight / brickSize);
+
+            // Clear existing content
+            grid.innerHTML = '';
+
+            // Update CSS grid
+            grid.style.gridTemplateColumns = `repeat(${cols}, ${brickSize}px)`;
+            grid.style.gridTemplateRows = `repeat(${rows}, ${brickSize}px)`;
+
+            // Generate bricks
+            for (let row = 0; row < rows; row++) {
+                for (let col = 0; col < cols; col++) {
+                    const brick = document.createElement('div');
+                    brick.className = 'brick';
+                    brick.style.color = getRandomColor();
+                    grid.appendChild(brick);
+                }
+            }
+        }
+
+        function regenerateGrid() {
+            generateGrid();
+        }
+
+        function setupResizeObserver() {
+            if (resizeObserver) {
+                resizeObserver.disconnect();
+            }
+
+            resizeObserver = new ResizeObserver(entries => {
+                for (let entry of entries) {
+                    // Debounce the grid generation
+                    clearTimeout(window.resizeTimeout);
+                    window.resizeTimeout = setTimeout(generateGrid, 100);
+                }
+            });
+
+            resizeObserver.observe(document.getElementById('legoContainer'));
+        }
+
+        // Event listeners
+        document.getElementById('paletteSelector').addEventListener('change', (e) => {
+            currentPalette = e.target.value;
+            updatePalettePreview();
+            generateGrid();
+        });
+
+        // Initialize
+        updatePalettePreview();
+        generateGrid();
+        setupResizeObserver();
+    </script>
+</body>
+
+</html>
