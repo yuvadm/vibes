@@ -12,6 +12,8 @@ A collection of cute & creative web experiments and visual experiences.
 - [BTC Ticker](/btctick/) - Live Bitcoin price visualization with a cool animated chart showing price history.
 - [Interactive Particle System](/particles/) - A full-screen interactive particle system where particles respond to cursor movement, clicks, and device tilt.
 - [Ambient Soundscape Generator](/soundscape/) - Create beautiful, generative ambient soundscapes with customizable musical scales and parameters that play continuously in the background.
+- [LEGO Brick Generator](/legobricks/) - Resizable LEGO brick container with customizable color palettes and randomization options.
+- [WebGL Noise Generator](/webgl/) - Interactive 3D graphics using WebGL with customizable parameters and real-time rendering.
 
 ## 🚀 Local Development
 
@@ -25,6 +27,8 @@ To view the experiments locally:
    - BTC Ticker: `btctick/index.html`
    - Interactive Particle System: `particles/index.html`
    - Ambient Soundscape Generator: `soundscape/index.html`
+   - LEGO Brick Generator: `legobricks/index.html`
+   - WebGL Noise Generator: `webgl/index.html`
 
 ## 💻 Technologies
 
